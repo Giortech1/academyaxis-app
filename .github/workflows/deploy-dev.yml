@@ -1,11 +1,11 @@
 ---
-name: Deploy AcademyAxis to Production
+name: Deploy AcademyAxis to Dev
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch: 
+      - dev
+  workflow_dispatch:
 
 jobs:
   load-config:
@@ -43,7 +43,7 @@ jobs:
         id: load-config
         run: |
           APP="academyaxis"
-          ENV="prod"
+          ENV="dev"
 
           CONFIG_FILE="infrastructure/.github/config/project-config.yml"
           if [ ! -f "$CONFIG_FILE" ]; then
@@ -61,6 +61,12 @@ jobs:
           MIN_INSTANCES=$(yq e ".$APP.$ENV.min_instances" $CONFIG_FILE)
           MAX_INSTANCES=$(yq e ".$APP.$ENV.max_instances" $CONFIG_FILE)
 
+          # Validate required values
+          if [[ "$PROJECT_ID" == "null" || -z "$PROJECT_ID" ]]; then
+            echo "::error::Project ID not found for $APP in $ENV environment"
+            exit 1
+          fi
+
           # Set outputs
           echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
           echo "project_number=$PROJECT_NUMBER" >> $GITHUB_OUTPUT
@@ -72,7 +78,7 @@ jobs:
           echo "max_instances=$MAX_INSTANCES" >> $GITHUB_OUTPUT
 
           # Debug output
-          echo "Using configuration for AcademyAxis in $ENV environment:"
+          echo "✅ Configuration loaded for AcademyAxis in $ENV environment:"
           echo "  Project ID: $PROJECT_ID"
           echo "  Project Number: $PROJECT_NUMBER"
           echo "  Service Name: $SERVICE_NAME"
@@ -108,94 +114,85 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker -q
 
+      - name: Verify application files
+        run: |
+          echo "📁 AcademyAxis application files:"
+          ls -la
+          echo ""
+          
+          if [ -f "package.json" ]; then
+            echo "📦 Found Node.js application"
+            echo "Package.json contents:"
+            cat package.json | head -20
+          fi
+          
+          if [ -f "server.js" ]; then
+            echo "🎓 Found AcademyAxis server.js"
+            echo "First 10 lines:"
+            head -10 server.js
+          fi
+
       - name: Build and Push Docker image
         run: |
           IMAGE_NAME="gcr.io/${{ needs.load-config.outputs.project_id }}/${{ needs.load-config.outputs.service_name }}:${{ github.sha }}"
           
-          echo "🏗️ Building AcademyAxis Production Docker image: $IMAGE_NAME"
+          echo "🏗️ Building AcademyAxis Docker image: $IMAGE_NAME"
           docker build -t "$IMAGE_NAME" .
           
-          echo "🚀 Pushing AcademyAxis Production image to registry"
+          echo "🚀 Pushing AcademyAxis Docker image to registry"
           docker push "$IMAGE_NAME"
           
-          echo "✅ AcademyAxis Production image ready for deployment"
+          echo "✅ AcademyAxis image build and push completed"
 
       - name: Deploy to Cloud Run
         run: |
-          echo "🎓 Deploying AcademyAxis to PRODUCTION environment"
-          echo "🚨 This is a PRODUCTION deployment - extra care required!"
+          echo "🎓 Deploying AcademyAxis ${{ needs.load-config.outputs.service_name }} to Cloud Run"
           
           gcloud run deploy ${{ needs.load-config.outputs.service_name }} \
             --image gcr.io/${{ needs.load-config.outputs.project_id }}/${{ needs.load-config.outputs.service_name }}:${{ github.sha }} \
             --platform managed \
             --region ${{ needs.load-config.outputs.region }} \
+            --allow-unauthenticated \
             --memory ${{ needs.load-config.outputs.memory }} \
             --cpu ${{ needs.load-config.outputs.cpu }} \
             --max-instances ${{ needs.load-config.outputs.max_instances }} \
             --min-instances ${{ needs.load-config.outputs.min_instances }} \
-            --concurrency 100 \
+            --concurrency 80 \
             --timeout 300s \
-            --set-env-vars="ENVIRONMENT=prod,JWT_SECRET=prod-academyaxis-secret-very-secure-change-this" \
-            --no-allow-unauthenticated \
+            --set-env-vars="ENVIRONMENT=dev,JWT_SECRET=dev-academyaxis-secret-change-in-production" \
             --quiet
 
-      - name: Configure Production Access
+      - name: Post-deployment verification
         run: |
-          echo "🔒 Configuring production access controls"
-          
-          # Add IAM policy for service account access (more secure for production)
-          gcloud run services add-iam-policy-binding ${{ needs.load-config.outputs.service_name }} \
-            --region=${{ needs.load-config.outputs.region }} \
-            --member="serviceAccount:github-actions-sa@${{ needs.load-config.outputs.project_id }}.iam.gserviceaccount.com" \
-            --role="roles/run.invoker" \
-            --quiet || echo "⚠️ Could not configure IAM policy"
-
-      - name: Verify Production Deployment
-        run: |
+          # Get the service URL
           SERVICE_URL=$(gcloud run services describe ${{ needs.load-config.outputs.service_name }} \
             --platform managed \
             --region ${{ needs.load-config.outputs.region }} \
             --format 'value(status.url)')
           
-          echo "🌐 AcademyAxis PRODUCTION deployed at: $SERVICE_URL"
+          echo "🌐 AcademyAxis service deployed at: $SERVICE_URL"
           
-          # Wait longer for production to be ready
-          echo "⏳ Waiting for production service to be ready..."
-          sleep 30
+          # Wait a moment for service to be ready
+          sleep 15
           
-          # Test service health with service account authentication
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-            "$SERVICE_URL/health" || echo "FAILED")
+          # Test the service health endpoint
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/health" || echo "FAILED")
           
           if [[ "$HTTP_STATUS" == "200" ]]; then
-            echo "✅ AcademyAxis PRODUCTION is healthy and operational!"
-            echo "🎓 Educational platform is LIVE for students worldwide!"
+            echo "✅ AcademyAxis service is responding successfully (HTTP $HTTP_STATUS)"
+            echo "🎓 Educational platform is live and ready for learning!"
             echo ""
-            echo "🚀 PRODUCTION ENDPOINTS:"
+            echo "📚 Available endpoints:"
             echo "  - Main Platform: $SERVICE_URL"
             echo "  - Health Check: $SERVICE_URL/health"
-            echo "  - Course Catalog: $SERVICE_URL/api/courses"
+            echo "  - API Info: $SERVICE_URL/api/info"
+            echo "  - Courses API: $SERVICE_URL/api/courses"
+            echo "  - Auth API: $SERVICE_URL/api/auth/register"
             echo ""
-            echo "🔒 SECURITY NOTES:"
-            echo "  - Production requires authentication"
-            echo "  - JWT secret is configured"
-            echo "  - Rate limiting is active"
-            echo "  - Enhanced security headers enabled"
-            echo ""
-            echo "📊 MONITORING:"
-            echo "  - Check Cloud Run metrics"
-            echo "  - Monitor error rates"
-            echo "  - Track user registrations"
-            echo "  - Watch cost budgets"
-            echo ""
-            echo "🎉 AcademyAxis is ready to educate the world!"
-          elif [[ "$HTTP_STATUS" == "403" ]]; then
-            echo "✅ Production deployed but access is restricted (403) - this is expected"
-            echo "🔒 Security is working - only authenticated requests allowed"
+            echo "🚀 AcademyAxis is ready for student enrollment!"
           else
-            echo "⚠️ Production health check returned: $HTTP_STATUS"
-            echo "🔍 Check the service logs for any issues"
+            echo "⚠️ AcademyAxis service returned HTTP status: $HTTP_STATUS"
+            echo "Check the logs for deployment issues"
           fi
           
-          echo "📋 AcademyAxis PRODUCTION deployment completed successfully!"
+          echo "📋 AcademyAxis deployment completed for development environment"
