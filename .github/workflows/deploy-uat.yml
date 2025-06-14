@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Giortech1/org-infrastructure
-          ref: feature
+          ref: main
           path: infrastructure
           token: ${{ secrets.PATH_TOKEN }}
       
@@ -102,12 +102,40 @@ jobs:
         with:
           project_id: ${{ needs.load-config.outputs.project_id }}
       
+      - name: Enable Required APIs
+        run: |
+          echo "🔧 Enabling required APIs..."
+          gcloud services enable \
+            cloudbuild.googleapis.com \
+            run.googleapis.com \
+            artifactregistry.googleapis.com \
+            --project=${{ needs.load-config.outputs.project_id }}
+
+      - name: Create Artifact Registry Repository
+        run: |
+          echo "📦 Setting up Artifact Registry repository..."
+          REPO_NAME="academyaxis-uat"
+          
+          # Check if repository exists
+          if ! gcloud artifacts repositories describe $REPO_NAME \
+            --location=${{ needs.load-config.outputs.region }} \
+            --project=${{ needs.load-config.outputs.project_id }} >/dev/null 2>&1; then
+            
+            echo "Creating Artifact Registry repository: $REPO_NAME"
+            gcloud artifacts repositories create $REPO_NAME \
+              --repository-format=docker \
+              --location=${{ needs.load-config.outputs.region }} \
+              --project=${{ needs.load-config.outputs.project_id }}
+          else
+            echo "Repository $REPO_NAME already exists"
+          fi
+
       - name: Configure Docker
-        run: gcloud auth configure-docker -q
+        run: gcloud auth configure-docker ${{ needs.load-config.outputs.region }}-docker.pkg.dev -q
       
       - name: Build and Push Docker image
         run: |
-          IMAGE_NAME="gcr.io/${{ needs.load-config.outputs.project_id }}/${{ needs.load-config.outputs.service_name }}:${{ github.sha }}"
+          IMAGE_NAME="${{ needs.load-config.outputs.region }}-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-uat/academyaxis-uat:${{ github.sha }}"
           
           echo "🎓 Building AcademyAxis UAT Docker image: $IMAGE_NAME"
           docker build -t "$IMAGE_NAME" .
@@ -122,7 +150,7 @@ jobs:
           echo "🎓 Deploying AcademyAxis to UAT environment"
           
           gcloud run deploy ${{ needs.load-config.outputs.service_name }} \
-            --image gcr.io/${{ needs.load-config.outputs.project_id }}/${{ needs.load-config.outputs.service_name }}:${{ github.sha }} \
+            --image ${{ needs.load-config.outputs.region }}-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-uat/academyaxis-uat:${{ github.sha }} \
             --platform managed \
             --region ${{ needs.load-config.outputs.region }} \
             --allow-unauthenticated \
