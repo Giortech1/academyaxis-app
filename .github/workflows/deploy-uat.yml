@@ -29,7 +29,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Giortech1/org-infrastructure
-          ref: main
           path: infrastructure
           token: ${{ secrets.PATH_TOKEN }}
       
