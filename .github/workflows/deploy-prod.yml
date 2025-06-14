@@ -105,12 +105,42 @@ jobs:
         with:
           project_id: ${{ needs.load-config.outputs.project_id }}
 
-      - name: Configure Docker
-        run: gcloud auth configure-docker -q
+      - name: Enable Required APIs
+        run: |
+          echo "🔧 Enabling required APIs..."
+          gcloud services enable \
+            cloudbuild.googleapis.com \
+            run.googleapis.com \
+            artifactregistry.googleapis.com \
+            --project=${{ needs.load-config.outputs.project_id }}
+
+      - name: Create Artifact Registry Repository
+        run: |
+          echo "📦 Setting up Artifact Registry repository..."
+          REPO_NAME="academyaxis-prod"
+          
+          # Check if repository exists
+          if ! gcloud artifacts repositories describe $REPO_NAME \
+            --location=${{ needs.load-config.outputs.region }} \
+            --project=${{ needs.load-config.outputs.project_id }} >/dev/null 2>&1; then
+            
+            echo "Creating Artifact Registry repository: $REPO_NAME"
+            gcloud artifacts repositories create $REPO_NAME \
+              --repository-format=docker \
+              --location=${{ needs.load-config.outputs.region }} \
+              --project=${{ needs.load-config.outputs.project_id }}
+          else
+            echo "Repository $REPO_NAME already exists"
+          fi
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          echo "🐳 Configuring Docker for Artifact Registry..."
+          gcloud auth configure-docker ${{ needs.load-config.outputs.region }}-docker.pkg.dev -q
 
       - name: Build and Push Docker image
         run: |
-          IMAGE_NAME="gcr.io/${{ needs.load-config.outputs.project_id }}/${{ needs.load-config.outputs.service_name }}:${{ github.sha }}"
+          IMAGE_NAME="${{ needs.load-config.outputs.region }}-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-prod/academyaxis-prod:${{ github.sha }}"
           
           echo "🏗️ Building AcademyAxis Production Docker image: $IMAGE_NAME"
           docker build -t "$IMAGE_NAME" .
@@ -126,7 +156,7 @@ jobs:
           echo "🚨 This is a PRODUCTION deployment - extra care required!"
           
           gcloud run deploy ${{ needs.load-config.outputs.service_name }} \
-            --image gcr.io/${{ needs.load-config.outputs.project_id }}/${{ needs.load-config.outputs.service_name }}:${{ github.sha }} \
+            --image ${{ needs.load-config.outputs.region }}-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-prod/academyaxis-prod:${{ github.sha }} \
             --platform managed \
             --region ${{ needs.load-config.outputs.region }} \
             --memory ${{ needs.load-config.outputs.memory }} \
@@ -176,12 +206,6 @@ jobs:
             echo "  - Main Platform: $SERVICE_URL"
             echo "  - Health Check: $SERVICE_URL/health"
             echo "  - Course Catalog: $SERVICE_URL/api/courses"
-            echo ""
-            echo "🔒 SECURITY NOTES:"
-            echo "  - Production requires authentication"
-            echo "  - JWT secret is configured"
-            echo "  - Rate limiting is active"
-            echo "  - Enhanced security headers enabled"
             echo ""
             echo "📊 MONITORING:"
             echo "  - Check Cloud Run metrics"
