@@ -31,7 +31,7 @@ jobs:
         with:
           repository: Giortech1/org-infrastructure
           path: infrastructure
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.PATH_TOKEN }}
 
       - name: Install yq
         run: |
@@ -167,10 +167,38 @@ jobs:
             exit 1
           fi
 
+      - name: Enable Required APIs
+        run: |
+          echo "🔧 Enabling required APIs..."
+          gcloud services enable \
+            cloudbuild.googleapis.com \
+            run.googleapis.com \
+            artifactregistry.googleapis.com \
+            --project=${{ needs.load-config.outputs.project_id }}
+
+      - name: Create Artifact Registry Repository
+        run: |
+          echo "📦 Setting up Artifact Registry repository..."
+          REPO_NAME="academyaxis-dev"
+          
+          # Check if repository exists
+          if ! gcloud artifacts repositories describe $REPO_NAME \
+            --location=${{ needs.load-config.outputs.region }} \
+            --project=${{ needs.load-config.outputs.project_id }} >/dev/null 2>&1; then
+            
+            echo "Creating Artifact Registry repository: $REPO_NAME"
+            gcloud artifacts repositories create $REPO_NAME \
+              --repository-format=docker \
+              --location=${{ needs.load-config.outputs.region }} \
+              --project=${{ needs.load-config.outputs.project_id }}
+          else
+            echo "Repository $REPO_NAME already exists"
+          fi
+
       - name: Configure Docker for Artifact Registry
         run: |
           echo "🐳 Configuring Docker for Artifact Registry..."
-          gcloud auth configure-docker us-central1-docker.pkg.dev -q
+          gcloud auth configure-docker ${{ needs.load-config.outputs.region }}-docker.pkg.dev -q
           echo "✅ Docker configured for Artifact Registry"
 
       - name: Verify application files
@@ -203,8 +231,8 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          # Use Artifact Registry format instead of GCR
-          IMAGE_NAME="us-central1-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-dev/academyaxis-dev:${{ github.sha }}"
+          # Use Artifact Registry format
+          IMAGE_NAME="${{ needs.load-config.outputs.region }}-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-dev/academyaxis-dev:${{ github.sha }}"
           
           echo "🏗️ Building AcademyAxis Docker image: $IMAGE_NAME"
           docker build -t "$IMAGE_NAME" .
@@ -219,7 +247,7 @@ jobs:
           echo "🎓 Deploying AcademyAxis ${{ needs.load-config.outputs.service_name }} to Cloud Run"
           
           gcloud run deploy ${{ needs.load-config.outputs.service_name }} \
-            --image us-central1-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-dev/academyaxis-dev:${{ github.sha }} \
+            --image ${{ needs.load-config.outputs.region }}-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/academyaxis-dev/academyaxis-dev:${{ github.sha }} \
             --platform managed \
             --region ${{ needs.load-config.outputs.region }} \
             --allow-unauthenticated \
