@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Image, ProgressBar, Table, Button, ListGroup, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './Dashboard.css';
+import '../../../shared/styles/Dashboard.css';
 
 
 import { useNavigate } from "react-router-dom";

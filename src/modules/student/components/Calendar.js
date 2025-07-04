@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Card, Button, Image, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import './Dashboard.css';
+import '../../../shared/styles/Dashboard.css';
 
 
 const CalendarGridScreen = () => {
