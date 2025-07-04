@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container, Button, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import './Dashboard.css';
+import '../../../shared/styles/Dashboard.css';
 
 function Assignments() {
   const navigate = useNavigate();

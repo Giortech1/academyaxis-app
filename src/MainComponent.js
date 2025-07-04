@@ -1,41 +1,45 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { FiMenu, FiX } from "react-icons/fi"; // Import hamburger icons
-import Leftside from "./Leftside";
-import Quizzes from "./Quizzes";
-import Assignments from "./Assignments";
-import Exams from "./Exams";
-import Mycourse from "./Mycourse";
-import AssignmentDetails from "./AssignmentDetails";
-import Coursedetails from "./Coursedetails";
-import Chats from "./Chats";
-import Feechallan from "./Feechallan";
-import Feechallandetail from "./Feechallandetail";
-import Paywithcard from "./Paywithcard";
-import Grades from "./Grades";
-import SubGrades from "./SubGrades";
-import CalendarScreen from "./CalendarScreen";
-import Calendar from "./Calendar";
-import Dashboard from "./Dashboard";
-import NewsAndAnnoucements from "./NewsAndAnnoucements";
-import Settings from "./Settings";
-import Examsyllabus from './Examsyllabus';
-import InprogressCourse from './InprogressCourse'; // Already imported
-import PastCourse from './PastCourse'; // Add this import for the past course
-import Withdraw from './Withdraw'; // Update the path if different
-import Enrollement from './Enrollement'; // or correct path
-import EnrollementCourse from "./EnrollementCourse";
-import StudentProfile from "./StudentProfile";
-import QuizDetail from "./QuizDetail";
-import StudentTranscript from './StudentTranscript';
-import FeesSlip from './FeesSlip';
-import SlipDetails from './SlipDetails';
-import AcademicCalendar from './AcademicCalendar';
+import { Routes, Route } from "react-router-dom";
+import { FiMenu, FiX } from "react-icons/fi";
 
+// Shared components
+import Sidebar from './shared/components/Layout/Sidebar';
+import Chats from './shared/components/Common/Chats';
+import NewsAndAnnouncements from './shared/components/Common/NewsAndAnnouncements';
+import Settings from './shared/components/Common/Settings';
 
+// Student components
+import Dashboard from './modules/student/components/Dashboard';
+import StudentProfile from './modules/student/components/StudentProfile';
+import MyCourses from './modules/student/components/MyCourses';
+import Grades from './modules/student/components/Grades';
+import SubGrades from './modules/student/components/SubGrades';
+import Assignments from './modules/student/components/Assignments';
+import AssignmentDetails from './modules/student/components/AssignmentDetails';
+import Calendar from './modules/student/components/Calendar';
+import CalendarScreen from './modules/student/components/CalendarScreen';
+import AcademicCalendar from './modules/student/components/AcademicCalendar';
+import Exams from './modules/student/components/Exams';
+import ExamSyllabus from './modules/student/components/ExamSyllabus';
+import Quizzes from './modules/student/components/Quizzes';
+import InProgressCourse from './modules/student/components/InProgressCourse';
+import PastCourse from './modules/student/components/PastCourse';
+import Enrollment from './modules/student/components/Enrollment';
+import EnrollmentCourse from './modules/student/components/EnrollmentCourse';
+import Withdraw from './modules/student/components/Withdraw';
+import StudentTranscript from './modules/student/components/StudentTranscript';
+
+// Teacher components
+import CourseDetails from './modules/teacher/components/CourseDetails';
+
+// Parent components (Finance)
+import FeeDetails from './modules/parent/components/FeeDetails';
+import FeeSlip from './modules/parent/components/FeeSlip';
+import PaymentSlip from './modules/parent/components/PaymentSlip';
+import PayWithCard from './modules/parent/components/PayWithCard';
+import SlipDetails from './modules/parent/components/SlipDetails';
 
 function MainComponent() {
-
   const [activeButton, setActiveButton] = useState(1);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -44,7 +48,7 @@ function MainComponent() {
     const handleResize = () => {
       const isSmall = window.innerWidth < 1000;
       setIsSmallScreen(isSmall);
-      setIsSidebarVisible(!isSmall); // Show by default only on desktop
+      setIsSidebarVisible(!isSmall);
     };
 
     handleResize();
@@ -56,117 +60,27 @@ function MainComponent() {
     setIsSidebarVisible(!isSidebarVisible);
   };
 
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate("/dashboard");
-  };
-
   return (
-    <div className="d-flex">
-      {/* Sidebar */}
-      <style>{`
-        .sidebar-container{
-        min-height:100vh !important;}
-        @media (max-width: 1000px) {
-          .sidebar-container {
-            width: 280px;
-            height: 100vh;
-            background-color: #101828;
-            position: fixed;
-            top: 0;
-            left: 0;
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-          }
-          #quizes {
-            height:auto !important;
-          }
-  
-          .mobile-sidebar.hidden {
-            transform: translateX(-100%);
-          }
-  
-          .mobile-sidebar.visible {
-            transform: translateX(0);
-          }
-  
-          .sidebar-overlay {
-            backdrop-filter: blur(2px);
-          }
-  
-          body.no-scroll {
-            overflow: hidden;
-          }
-        }
-      `}</style>
-
-      <div
-        className={`sidebar-container ${isSmallScreen ? "mobile-sidebar" : ""} ${isSidebarVisible ? "visible" : "hidden"}`}
-        style={{
-          position: isSmallScreen ? "fixed" : "static",
-          zIndex: 2000,
-          transition: "transform 0.3s ease-in-out",
-          transform: isSidebarVisible ? "translateX(0)" : "translateX(-100%)",
-        }}
-      >
-        <Leftside
-          isSidebarVisible={isSidebarVisible}
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+      {isSidebarVisible && (
+        <Sidebar
           activeButton={activeButton}
           setActiveButton={setActiveButton}
-          isSmallScreen={isSmallScreen}
           toggleSidebar={toggleSidebar}
         />
-      </div>
-
-      {/* Mobile overlay */}
-      {isSmallScreen && isSidebarVisible && (
-        <div
-          className="sidebar-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            zIndex: 1000,
-          }}
-          onClick={toggleSidebar}
-        />
       )}
-
-      {/* Main content */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-        {/* Hamburger button for mobile */}
+      
+      <div style={{ flex: 1, padding: "20px", overflowY: "auto" }}>
         {isSmallScreen && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "15px 20px",
-              position: "relative",
-              backgroundColor: "#101828",
-            }}
-          >
-            {/* Logo */}
-            <div className="mb-0 text-start ps-0" onClick={handleClick} style={{ cursor: "pointer" }}>
-              <img
-                src="/assets/logo.png"
-                alt="Logo"
-                style={{ objectFit: 'contain', maxHeight: "30px" }}
-              />
-            </div>
-
-            {/* Hamburger on the right */}
+          <div style={{ marginBottom: "10px" }}>
             <button
               onClick={toggleSidebar}
               style={{
                 background: "none",
                 border: "none",
                 fontSize: "24px",
-                color: "white",
+                cursor: "pointer",
+                color: "#333",
               }}
             >
               {isSidebarVisible ? <FiX /> : <FiMenu />}
@@ -180,36 +94,33 @@ function MainComponent() {
           <Route path="/quizzes" element={<Quizzes />} />
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/exams" element={<Exams />} />
-          <Route path="/mycourse" element={<Mycourse />} />
+          <Route path="/mycourse" element={<MyCourses />} />
           <Route path="/assignments/details/:id" element={<AssignmentDetails />} />
-          <Route path="/coursedetails" element={<Coursedetails />} />
+          <Route path="/coursedetails" element={<CourseDetails />} />
           <Route path="/chats" element={<Chats />} />
-          <Route path="/feechallan" element={<Feechallan />} />
-          <Route path="/feechallandetail" element={<Feechallandetail />} />
-          <Route path="/paywithcard" element={<Paywithcard />} />
+          <Route path="/feechallan" element={<FeeDetails />} />
+          <Route path="/feechallandetail" element={<FeeDetails />} />
+          <Route path="/paywithcard" element={<PayWithCard />} />
           <Route path="/Grades" element={<Grades />} />
           <Route path="/SubGrades" element={<SubGrades />} />
           <Route path="/calendarscreen" element={<CalendarScreen />} />
           <Route path="/calendar" element={<Calendar />} />
-          <Route path="/news-and-announcements" element={<NewsAndAnnoucements />} />
+          <Route path="/news-and-announcements" element={<NewsAndAnnouncements />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/exam-syllabus" element={<Examsyllabus />} />
-          <Route path="/InprogressCourse" element={<InprogressCourse />} />
+          <Route path="/exam-syllabus" element={<ExamSyllabus />} />
+          <Route path="/InprogressCourse" element={<InProgressCourse />} />
           <Route path="/PastCourse" element={<PastCourse />} />
           <Route path="/Withdraw" element={<Withdraw />} />
-          <Route path="/enrollement" element={<Enrollement />} />
-          <Route path="/enrollementcourse" element={<EnrollementCourse />} />
+          <Route path="/enrollement" element={<Enrollment />} />
+          <Route path="/enrollementcourse" element={<EnrollmentCourse />} />
           <Route path="/studentprofile" element={<StudentProfile />} />
-          <Route path="/quiz/:id" element={<QuizDetail />} />
-          <Route path="/quiz-detail/:id" element={<QuizDetail />} />
+          <Route path="/quiz/:id" element={<div>Quiz Detail Component</div>} />
+          <Route path="/quiz-detail/:id" element={<div>Quiz Detail Component</div>} />
           <Route path="/assignment-detail/:id" element={<AssignmentDetails />} />
           <Route path="/student-transcript" element={<StudentTranscript />} />
-          <Route path="/payment-success" element={<FeesSlip />} />
-                    <Route path="/slip-details" element={<SlipDetails />} />
-                                        <Route path="/academycalendar" element={<AcademicCalendar />} />
-
-
-
+          <Route path="/payment-success" element={<FeeSlip />} />
+          <Route path="/slip-details" element={<SlipDetails />} />
+          <Route path="/academycalendar" element={<AcademicCalendar />} />
         </Routes>
       </div>
     </div>

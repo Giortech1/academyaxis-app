@@ -4,7 +4,7 @@ import "react-calendar/dist/Calendar.css"; // Default styles for React Calendar
 import { Container, Row, Col, Card, Form, Button, Image, Dropdown } from "react-bootstrap";
 import 'react-calendar/dist/Calendar.css';
 import { useNavigate } from "react-router-dom";
-import './Dashboard.css';
+import '../../../shared/styles/Dashboard.css';
 
 
 
