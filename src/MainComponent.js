@@ -30,7 +30,7 @@ import Withdraw from './modules/student/components/Withdraw';
 import StudentTranscript from './modules/student/components/StudentTranscript';
 
 // Teacher components
-import CourseDetails from './modules/teacher/components/CourseDetails';
+import CourseDetails from './modules/teacher/src/Coursedetails';
 
 // Parent components (Finance)
 import FeeDetails from './modules/parent/components/FeeDetails';
