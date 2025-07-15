@@ -78,7 +78,6 @@ const CalendarGridScreen = () => {
                 if (teacher) {
                     // For each day in the schedule
                     section.schedule.days.forEach(dayName => {
-                        // Find the corresponding date in the current week
                         weekDates.forEach(weekDate => {
                             if (getDayName(weekDate) === dayName) {
                                 const event = {
@@ -86,15 +85,15 @@ const CalendarGridScreen = () => {
                                     date: weekDate.getTime(),
                                     startTime: convertTo12Hour(section.schedule.start_time),
                                     endTime: convertTo12Hour(section.schedule.end_time),
-                                    subject: section.course_name,
-                                    room: section.room_no,
+                                    subject: section?.course?.name,
+                                    room: section?.room_no,
                                     teacher: `${teacher.first_name} ${teacher.last_name}`,
                                     color: getEventColor(sectionIndex),
-                                    department: section.department,
-                                    section: section.section,
+                                    department: section?.department?.name,
+                                    section: section?.section,
                                     teacherId: teacher.teacher_id,
                                     email: teacher.email,
-                                    teacherImage: "/assets/Avatar3.png" // Default teacher image
+                                    teacherImage: teacher?.profile_pic
                                 };
                                 generatedEvents.push(event);
                             }

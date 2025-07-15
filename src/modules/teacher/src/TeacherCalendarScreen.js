@@ -19,15 +19,13 @@ const CalendarScreen = () => {
         navigate('/TeacherCalendar');
     };
 
-    // Function to get current day name
     const getCurrentDayName = () => {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         return days[selectedDate.getDay()].toLowerCase();
     };
 
-    // Function to convert sections data to today's classes format
     const convertSectionsToClasses = () => {
-        if (!sections || sections.length === 0) {
+        if (!sections || sections?.length === 0) {
             return [];
         }
 
@@ -36,22 +34,22 @@ const CalendarScreen = () => {
         console.log('Selected day: ', currentDay);
 
         sections.forEach((section, index) => {
-            if (section.schedule && section.schedule.days && section.schedule.days.includes(currentDay)) {
-                const teacher = section.teachers && section.teachers.length > 0 ? section.teachers[0] : null;
+            if (section?.schedule && section?.schedule?.days && section?.schedule?.days?.includes(currentDay)) {
+                const teacher = section?.teachers && section?.teachers?.length > 0 ? section?.teachers[0] : null;
 
                 if (teacher) {
                     const classInfo = {
                         id: section.id || index + 1,
-                        teacher: `${teacher.first_name} ${teacher.last_name}`,
-                        subject: section.course_name,
-                        room: section.room_no,
-                        time: `${section.schedule.start_time} - ${section.schedule.end_time}`,
-                        duration: calculateDuration(section.schedule.start_time, section.schedule.end_time),
-                        department: section.department,
-                        section: section.section,
-                        teacherImage: "/assets/avatar.jpeg",
-                        teacherId: teacher.teacher_id,
-                        email: teacher.email
+                        teacher: `${teacher?.first_name} ${teacher?.last_name}`,
+                        subject: section?.course?.name,
+                        room: section?.room_no,
+                        time: `${section?.schedule?.start_time} - ${section?.schedule?.end_time}`,
+                        duration: calculateDuration(section?.schedule?.start_time, section?.schedule?.end_time),
+                        department: section?.department?.name,
+                        section: section?.section,
+                        teacherId: teacher?.teacher_id,
+                        email: teacher?.email,
+                        profile_pic: teacher?.profile_pic,
                     };
                     classes.push(classInfo);
                 }
@@ -324,7 +322,7 @@ const CalendarScreen = () => {
                                         {/* Left side for teacher image */}
                                         <div className="me-2">
                                             <img
-                                                src={classInfo.teacherImage}
+                                                src={classInfo.profile_pic}
                                                 alt={classInfo.teacher}
                                                 className="teacher-avatar"
                                             />

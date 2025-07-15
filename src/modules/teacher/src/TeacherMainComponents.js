@@ -24,6 +24,8 @@ import TeacherStudents from './TeacherStudents';
 import TeacherStudentsDetails from './TeacherStudentsDetails';
 import TeacherProfile from './TeacherProfile';
 import Login from "./SignIn";
+import AllSectionAssignments from "./AllSectionAssignments";
+import AllSectionQuizzes from "./AllSectionQuizzes";
 
 function MainComponent() {
   const [activeButton, setActiveButton] = useState(1);
@@ -32,7 +34,7 @@ function MainComponent() {
   const [userRole, setUserRole] = useState("teacher");
   const [contentHeight, setContentHeight] = useState(0);
   const location = useLocation();
-  
+
   const isAuthPage =
     location.pathname === "/" ||
     location.pathname === "/signup" ||
@@ -141,11 +143,13 @@ function MainComponent() {
             <Route path="/teacherchats" element={<TeacherChats />} />
             <Route path="/TeacherCalendarScreen" element={<TeacherCalendarScreen />} />
             <Route path="/TeacherCalendar" element={<TeacherCalendar />} />
-            <Route path="/TeacherQuizzes" element={<TeacherQuizzes />} />
-            <Route path="/TeacherQuizzesDetails" element={<TeacherQuizzesDetails />} />
-            <Route path="/TeacherAssignments" element={<TeacherAssignments />} />
-            <Route path="/TeacherAssignmentDetails" element={<TeacherAssignmentDetails />} />
+            <Route path="/AllSectionAssignments" element={<AllSectionAssignments />} />
+            <Route path="/TeacherAssignments/:id" element={<TeacherAssignments />} />
+            <Route path="/TeacherAssignmentDetails/:sectionId/:assignmentId" element={<TeacherAssignmentDetails />} />
             <Route path="/create-assignments" element={<TeacherCreateAssignments />} />
+            <Route path="/AllSectionQuizzes" element={<AllSectionQuizzes />} />
+            <Route path="/TeacherQuizzes/:id" element={<TeacherQuizzes />} />
+            <Route path="/TeacherQuizzesDetails/:sectionId/:quizId" element={<TeacherQuizzesDetails />} />
             <Route path="/news-and-announcements" element={<NewsAndAnnoucements />} />
             <Route path="/teacher-news-and-announcements" element={<TeacherNewsAndAnnoucements />} />
             <Route path="/TeacherAttendence" element={<TeacherAttendence />} />
