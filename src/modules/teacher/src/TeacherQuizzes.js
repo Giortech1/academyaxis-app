@@ -1,70 +1,54 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Button, Table, Image, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useNavigate } from "react-router-dom";
-
-
-
+import { useNavigate, useParams } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import { UserContext } from "./UserContext";
 
 function Quizzes() {
-    const [tableData, setTableData] = useState([]); // All data
+    const { id } = useParams();
+    const { userData, sections, fetchQuizzes } = useContext(UserContext);
+    const [sectionData, setSectionData] = useState([]);
+    const [quizzesData, setQuizzesData] = useState([]);
     const navigate = useNavigate();
-
     const [searchText, setSearchText] = useState("");
 
-
-
-
-    // Props for Header
-    const dropdownOptions = [
-        { label: "ICS" },
-        { label: "Section 1" },
-    ];
-    const searchPlaceholder = "Search";
-    const sortButtonText = "Sort";
-    const createQuizButtonText = "Create Quiz";
-
-
-
-
-
-    // Fetch or generate data
     useEffect(() => {
-        const fetchAssignmentsData = async () => {
+        if (!id || sections?.length === 0) return;
+
+        const getQuizzesData = async () => {
             try {
-                const response = await fetch("/api/assignments");
-                if (!response.ok) {
-                    throw new Error("Failed to fetch data");
+                const response = await fetchQuizzes(id);
+
+                if (response?.success) {
+                    setQuizzesData(response?.data);
+
+                    const matchedSection = sections.find(section => section?.id === id);
+                    setSectionData(matchedSection);
                 }
-                const data = await response.json();
-                setTableData(data);
-            } catch {
-                // Use fallback data in case of an error
-                setTableData(generateFallbackData());
+            } catch (error) {
+                console.log('Error fetching quizzes: ', error);
             }
         };
 
-        fetchAssignmentsData();
-    }, []);
+        getQuizzesData();
+    }, [id, sections]);
 
-    const generateFallbackData = () => {
-        return Array.from({ length: 7 }, (_, i) => {
-            const status = i % 2 === 0 ? "Ongoing" : "Completed";
-            return {
-                id: i + 1,
-                name: `Demo Quiz Name ${i + 1}`,
-                subject: `Subject ${i + 1}`, // Dynamically assign subject
-                date: `2024-05-${String(i + 1).padStart(2, "0")}`,
-                status: status, // Dynamically assign status
-                buttonImage: "/assets/view-btn.png", // Dynamically assign button image
-            };
+    const formatDate = (isoString) => {
+        const date = new Date(isoString);
+
+        return date.toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
         });
     };
 
-
-    // Render status dot based on type
     const renderStatusDot = (status) => {
-        const color = status === "Online" ? "green" : "#039855";
+        const color = status === "published" ? "green" : "orange";
         return (
             <span
                 style={{
@@ -79,17 +63,8 @@ function Quizzes() {
         );
     };
 
-
-
-    const handleRowClick = () => {
-        // Navigate to TeacherQuizzesDetails.js
-        navigate('/TeacherQuizzesDetails'); // Adjust the path as needed
-    };
-
     return (
         <Container fluid className="p-0 d-flex">
-
-
             <main className="flex-grow-1 p-3">
                 {/* Header Section */}
                 <header
@@ -97,7 +72,6 @@ function Quizzes() {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        // marginBottom: '20px',
                         padding: '10px',
                         paddingtop: '0px',
                         width: '100%',
@@ -107,16 +81,14 @@ function Quizzes() {
                     {/* Left side: Arrow and Heading */}
                     <div style={{ display: 'flex', alignItems: 'center' }}>
 
-                        <h1 style={{ fontSize: '24px', margin: 0, fontWeight: '600' }}>Quizzes</h1>
+                        <h1 style={{ fontSize: '24px', margin: 0, fontWeight: '600' }}>quizzes</h1>
                     </div>
-
-
 
                     {/* Right side: User Info and Dropdown */}
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         {/* User Info */}
                         <img
-                            src="/assets/avatar.jpeg" // Replace with your image path
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             style={{
                                 borderRadius: '50%',
@@ -127,8 +99,8 @@ function Quizzes() {
                             }}
                         />
                         <div style={{ marginRight: '10px' }}>
-                            <div style={{ fontWeight: '500', fontSize: '14' }}>Jhon Deo</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>123456</div>
+                            <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.teacher_id}</div>
                         </div>
                         <button
                             style={{
@@ -138,7 +110,7 @@ function Quizzes() {
                             }}
                         >
                             <img
-                                src="/assets/arrow-down.png" // Replace with your dropdown icon
+                                src="/assets/arrow-down.png"
                                 alt="Dropdown"
                                 style={{ width: '12px', height: '12px' }}
                             />
@@ -147,31 +119,43 @@ function Quizzes() {
                 </header>
 
                 <header className="d-flex justify-content-between align-items-center mb-4" style={{ marginTop: "15px" }}>
-                    {/* Left Section: Dropdowns */}
+                    {/* Left Section*/}
                     <div className="d-flex align-items-center">
-                        {dropdownOptions.map((option, index) => (
-                            <div
-                                key={index}
-                                className="d-flex align-items-center me-3"
-                                style={{
-                                    border: "1px solid #D1D5DB",
-                                    borderRadius: "8px",
-                                    padding: "8px 12px",
-                                    cursor: "pointer",
-                                    backgroundColor: "white",
-                                }}
-                            >
-                                <span style={{ fontSize: "14px", fontWeight: "600" }}>{option.label}</span>
-                                <Image
-                                    src="/assets/arrow-down.png"
-                                    alt="Dropdown Icon"
-                                    width={12}
-                                    height={12}
-                                    style={{ marginLeft: "8px" }}
-                                />
-                            </div>
-                        ))}
+                        <div
+                            className="d-flex align-items-center me-3"
+                            style={{
+                                border: "1px solid #D1D5DB",
+                                borderRadius: "8px",
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                backgroundColor: "white",
+                                justifyContent: "center",
+                                width: "auto"
+                            }}
+                        >
+                            <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                                {sectionData?.course?.name}
+                            </span>
+                        </div>
+
+                        <div
+                            className="d-flex align-items-center me-3"
+                            style={{
+                                border: "1px solid #D1D5DB",
+                                borderRadius: "8px",
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                backgroundColor: "white",
+                                justifyContent: "center",
+                                width: "auto"
+                            }}
+                        >
+                            <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                                Section {sectionData?.section}
+                            </span>
+                        </div>
                     </div>
+
 
                     {/* Right Section: Search Bar, Sort, and Button */}
                     <div className="d-flex align-items-center">
@@ -179,7 +163,7 @@ function Quizzes() {
                         <div className="position-relative me-3">
                             <Form.Control
                                 type="text"
-                                placeholder={searchPlaceholder}
+                                placeholder={"Search"}
                                 value={searchText}
                                 onChange={(e) => setSearchText(e.target.value)}
                                 style={{
@@ -206,29 +190,7 @@ function Quizzes() {
                             />
                         </div>
 
-                        {/* Sort Button */}
-                        <Button
-                            className="d-flex align-items-center me-3"
-                            style={{
-                                backgroundColor: "white",
-                                color: "#374151",
-                                border: "1px solid #D1D5DB",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                fontWeight: "600",
-                                padding: "8px 12px",
-                            }}
-                        >
-                            <Image
-                                src="/assets/filter-lines.png"
-                                alt="Sort Icon"
-                                width={20}
-                                height={20}
-                                className="me-2"
-                            />
-                            {sortButtonText}
-                        </Button>
-
+                        {/* Create Quiz Button */}
                         <Button
                             className="d-flex align-items-center"
                             style={{
@@ -240,7 +202,7 @@ function Quizzes() {
                                 padding: "8px 16px",
                                 border: "none",
                             }}
-                            onClick={() => navigate("/create-quiz")}
+                            onClick={() => navigate("/create-quizzes")}
                         >
                             <Image
                                 src="/assets/plus1.png"
@@ -249,16 +211,14 @@ function Quizzes() {
                                 height={20}
                                 className="me-2"
                             />
-                            {createQuizButtonText}
+                            Create quizzes
                         </Button>
 
                     </div>
                 </header>
 
 
-                <div className="border  p-3" style={{ height: "700px", border: '1px solid #EAECF0', borderRadius: '12px' }}>
-
-
+                <div className="border rounded p-3" style={{ height: "750px" }}>
                     {/* Table Section */}
                     <div style={{ maxHeight: "690px", overflowY: "auto", overflowX: "auto" }}>
                         <Table
@@ -277,28 +237,29 @@ function Quizzes() {
                                     top: 0,
                                     background: "#FFFFFF",
                                     zIndex: 1,
-                                    fontStyle: 'normal',
-                                    color: '#111827',
-                                    fontSize: '16px',
-                                    fontWeight: '500',
-                                    fontFamily: 'inter'
+                                    fontStyle: "normal",
+                                    color: "#111827",
+                                    fontSize: "16px",
+                                    fontWeight: "500",
+                                    fontFamily: "Inter",
                                 }}
                             >
-                                <tr>
-                                    <th style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>Sr No.</th>
-                                    <th style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>Name</th>
-                                    <th style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>Subject</th>
-                                    <th style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>Date</th>
-                                    <th style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>Status</th>
-                                    <th style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>View</th>
+                                <tr style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>
+                                    <th>Sr No.</th>
+                                    <th>Name</th>
+                                    <th>Start Date</th>
+                                    <th>Deadline</th>
+                                    <th>Status</th>
+                                    <th>View</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {tableData.map((row) => (
+                                {quizzesData.map((row, index) => (
                                     <tr
-                                        key={row.id}
+                                        key={row?.id}
                                         style={{
-                                            // borderBottom: "1px solid #D1D5DB",
+                                            borderBottom: "1px solid #D1D5DB",
                                             lineHeight: "60px",
                                             fontSize: "14px",
                                             fontWeight: "400",
@@ -306,41 +267,35 @@ function Quizzes() {
                                             fontStyle: "normal",
                                         }}
                                     >
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>{row.id}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>{row.name}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>{row.subject}</td> {/* Dynamically display subject */}
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>{row.date}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '500', color: '#1C222E' }}>
-                                            {renderStatusDot(row.status)} {/* Dynamically render status dot */}
-                                            {row.status} {/* Dynamically display status */}
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{index + 1}</td>
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{row?.title}</td>
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{formatDate(row?.startDate)}</td>
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{formatDate(row?.endDate)}</td>
+                                        <td style={{ verticalAlign: "middle" }}>
+                                            {renderStatusDot(row?.status)} {row?.status === 'published' ? 'Active' : 'Draft'}
                                         </td>
                                         <td
                                             style={{
                                                 verticalAlign: "middle",
-                                                // textAlign: "center",
-
                                             }}
+
                                         >
                                             <img
-                                                src={row.buttonImage} // Dynamically change button image
-                                                alt="View Button"
-                                                style={{
-                                                    width: "24px",
-                                                    height: "24px",
-                                                    cursor: "pointer",
-                                                }}
-                                                onClick={handleRowClick} // Trigger navigation on click
-
+                                                src="/assets/view-btn.png"
+                                                alt="View Quiz"
+                                                style={{ width: '24px', height: '24px', cursor: "pointer", }}
+                                                onClick={() => navigate(`/TeacherQuizzesDetails/${sectionData?.id}/${row?.id}`)}
                                             />
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
-
                         </Table>
                     </div>
                 </div>
             </main>
+
+            <ToastContainer />
         </Container>
     );
 }

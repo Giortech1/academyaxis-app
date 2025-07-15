@@ -1,63 +1,54 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Button, Table, Image, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useNavigate } from "react-router-dom";
-
-
-
+import { useNavigate, useParams } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import { UserContext } from "./UserContext";
 
 function Assignments() {
-    const [tableData, setTableData] = useState([]); // All data
+    const { id } = useParams();
+    const { userData, sections, fetchAssignments } = useContext(UserContext);
+    const [sectionData, setSectionData] = useState([]);
+    const [assignmentsData, setAssignmentData] = useState([]);
     const navigate = useNavigate();
-
     const [searchText, setSearchText] = useState("");
 
-    // Props for Header
-    const dropdownOptions = [
-        { label: "ICS" },
-        { label: "Section 1" },
-    ];
-    const searchPlaceholder = "Search";
-    const sortButtonText = "Sort";
-    const createQuizButtonText = "Create Assignments";
-
     useEffect(() => {
-        const fetchAssignmentsData = async () => {
+        if (!id || sections?.length === 0) return;
+
+        const getAssignmentsData = async () => {
             try {
-                const response = await fetch("/api/assignments");
-                if (!response.ok) {
-                    throw new Error("Failed to fetch data");
+                const response = await fetchAssignments(id);
+
+                if (response?.success) {
+                    setAssignmentData(response?.data);
+
+                    const matchedSection = sections.find(section => section?.id === id);
+                    setSectionData(matchedSection);
                 }
-                const data = await response.json();
-                setTableData(data);
-            } catch {
-                // Use fallback data in case of an error
-                setTableData(generateFallbackData());
+            } catch (error) {
+                console.log('Error fetching assignments: ', error);
             }
         };
 
-        fetchAssignmentsData();
-    }, []);
+        getAssignmentsData();
+    }, [id, sections]);
 
-    // Generate fallback data
-    const generateFallbackData = () => {
-        return Array.from({ length: 7 }, (_, i) => {
-            const status = i % 2 === 0 ? "Ongoing" : "Completed";
+    const formatDate = (isoString) => {
+        const date = new Date(isoString);
 
-            return {
-                id: i + 1,
-                name: `Demo Assignment Name ${i + 1}`,
-                subject: `English`, // Example subject
-                date: `2024-05-${String(i + 1).padStart(2, "0")}`,
-                status: status,
-                // Removed avatars data and extraCount
-            };
+        return date.toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
         });
     };
 
-    // Render status dot based on status
     const renderStatusDot = (status) => {
-        const color = status === "Ongoing" ? "green" : "orange";
+        const color = status === "published" ? "green" : "orange";
         return (
             <span
                 style={{
@@ -72,54 +63,8 @@ function Assignments() {
         );
     };
 
-    // Render avatars with extra count
-    const renderAvatars = (avatars, extraCount) => {
-        return (
-            <div style={{ display: "flex", alignItems: "center" }}>
-                {avatars.map((avatar, index) => (
-                    <img
-                        key={index}
-                        src={avatar}
-                        alt={`Avatar ${index + 1}`}
-                        style={{
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "50%",
-                            border: "1.5px solid white",
-                            marginRight: index < 4 ? "-10px" : "0",
-                        }}
-                    />
-                ))}
-                {extraCount > 0 && (
-                    <div
-                        style={{
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "50%",
-                            border: "1.5px solid #fff",
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            background: "#F2F4F7",
-                            fontSize: "12px",
-                            color: "#4B5563",
-                            marginLeft: "-8px",
-                            fontWeight: "500",
-                        }}
-                    >
-                        +{extraCount}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-
-
     return (
         <Container fluid className="p-0 d-flex">
-
-
             <main className="flex-grow-1 p-3">
                 {/* Header Section */}
                 <header
@@ -127,7 +72,6 @@ function Assignments() {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        // marginBottom: '20px',
                         padding: '10px',
                         paddingtop: '0px',
                         width: '100%',
@@ -140,13 +84,11 @@ function Assignments() {
                         <h1 style={{ fontSize: '24px', margin: 0, fontWeight: '600' }}>Assignments</h1>
                     </div>
 
-
-
                     {/* Right side: User Info and Dropdown */}
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         {/* User Info */}
                         <img
-                            src="/assets/avatar.jpeg" // Replace with your image path
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             style={{
                                 borderRadius: '50%',
@@ -157,8 +99,8 @@ function Assignments() {
                             }}
                         />
                         <div style={{ marginRight: '10px' }}>
-                            <div style={{ fontWeight: '500', fontSize: '14' }}>Jhon Deo</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>123456</div>
+                            <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.teacher_id}</div>
                         </div>
                         <button
                             style={{
@@ -168,7 +110,7 @@ function Assignments() {
                             }}
                         >
                             <img
-                                src="/assets/arrow-down.png" // Replace with your dropdown icon
+                                src="/assets/arrow-down.png"
                                 alt="Dropdown"
                                 style={{ width: '12px', height: '12px' }}
                             />
@@ -177,33 +119,43 @@ function Assignments() {
                 </header>
 
                 <header className="d-flex justify-content-between align-items-center mb-4" style={{ marginTop: "15px" }}>
-                    {/* Left Section: Dropdowns */}
+                    {/* Left Section*/}
                     <div className="d-flex align-items-center">
-                        {dropdownOptions.map((option, index) => (
-                            <div
-                                key={index}
-                                className="d-flex align-items-center me-3"
-                                style={{
-                                    border: "1px solid #D1D5DB",
-                                    borderRadius: "8px",
-                                    padding: "8px 12px",
-                                    cursor: "pointer",
-                                    backgroundColor: "white",
-                                    width: '110px',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <span style={{ fontSize: "14px", fontWeight: "600" }}>{option.label}</span>
-                                <Image
-                                    src="/assets/arrow-down.png"
-                                    alt="Dropdown Icon"
-                                    width={12}
-                                    height={12}
-                                    style={{ marginLeft: "8px" }}
-                                />
-                            </div>
-                        ))}
+                        <div
+                            className="d-flex align-items-center me-3"
+                            style={{
+                                border: "1px solid #D1D5DB",
+                                borderRadius: "8px",
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                backgroundColor: "white",
+                                justifyContent: "center",
+                                width: "auto"
+                            }}
+                        >
+                            <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                                {sectionData?.course?.name}
+                            </span>
+                        </div>
+
+                        <div
+                            className="d-flex align-items-center me-3"
+                            style={{
+                                border: "1px solid #D1D5DB",
+                                borderRadius: "8px",
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                backgroundColor: "white",
+                                justifyContent: "center",
+                                width: "auto"
+                            }}
+                        >
+                            <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                                Section {sectionData?.section}
+                            </span>
+                        </div>
                     </div>
+
 
                     {/* Right Section: Search Bar, Sort, and Button */}
                     <div className="d-flex align-items-center">
@@ -211,7 +163,7 @@ function Assignments() {
                         <div className="position-relative me-3">
                             <Form.Control
                                 type="text"
-                                placeholder={searchPlaceholder}
+                                placeholder={"Search"}
                                 value={searchText}
                                 onChange={(e) => setSearchText(e.target.value)}
                                 style={{
@@ -238,29 +190,6 @@ function Assignments() {
                             />
                         </div>
 
-                        {/* Sort Button */}
-                        <Button
-                            className="d-flex align-items-center me-3"
-                            style={{
-                                backgroundColor: "white",
-                                color: "#374151",
-                                border: "1px solid #D1D5DB",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                fontWeight: "600",
-                                padding: "8px 12px",
-                            }}
-                        >
-                            <Image
-                                src="/assets/filter-lines.png"
-                                alt="Sort Icon"
-                                width={20}
-                                height={20}
-                                className="me-2"
-                            />
-                            {sortButtonText}
-                        </Button>
-
                         {/* Create Quiz Button */}
                         <Button
                             className="d-flex align-items-center"
@@ -282,7 +211,7 @@ function Assignments() {
                                 height={20}
                                 className="me-2"
                             />
-                            {createQuizButtonText}
+                            Create Assignments
                         </Button>
 
                     </div>
@@ -290,8 +219,6 @@ function Assignments() {
 
 
                 <div className="border rounded p-3" style={{ height: "750px" }}>
-
-
                     {/* Table Section */}
                     <div style={{ maxHeight: "690px", overflowY: "auto", overflowX: "auto" }}>
                         <Table
@@ -320,17 +247,17 @@ function Assignments() {
                                 <tr style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>
                                     <th>Sr No.</th>
                                     <th>Name</th>
-                                    <th>Subject</th>
-                                    <th>Date</th>
+                                    <th>Start Date</th>
+                                    <th>Deadline</th>
                                     <th>Status</th>
                                     <th>View</th>
-                                    <th></th> {/* For the vertical dots image */}
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {tableData.map((row) => (
+                                {assignmentsData.map((row, index) => (
                                     <tr
-                                        key={row.id}
+                                        key={row?.id}
                                         style={{
                                             borderBottom: "1px solid #D1D5DB",
                                             lineHeight: "60px",
@@ -340,36 +267,26 @@ function Assignments() {
                                             fontStyle: "normal",
                                         }}
                                     >
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{row.id}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{row.name}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{row.subject}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{row.date}</td>
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{index + 1}</td>
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{row?.title}</td>
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{formatDate(row?.startDate)}</td>
+                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{formatDate(row?.endDate)}</td>
                                         <td style={{ verticalAlign: "middle" }}>
-                                            {renderStatusDot(row.status)} {row.status}
+                                            {renderStatusDot(row?.status)} {row?.status === 'published' ? 'Active' : 'Draft'}
                                         </td>
                                         <td
                                             style={{
                                                 verticalAlign: "middle",
-                                                // textAlign: "center",
-
                                             }}
 
                                         >
                                             <img
-                                                src="/assets/view-btn.png" // Image button for view
+                                                src="/assets/view-btn.png"
                                                 alt="View Assignment"
-                                                style={{ width: '24px', height: '24px', cursor: "pointer", }} // Adjust size as needed
-                                                onClick={() => navigate(`/TeacherAssignmentDetails?id=${row.id}`)} // Pass row ID as query parameter
+                                                style={{ width: '24px', height: '24px', cursor: "pointer", }}
+                                                onClick={() => navigate(`/TeacherAssignmentDetails/${sectionData?.id}/${row?.id}`)}
                                             />
                                         </td>
-                                        {/* <td style={{ verticalAlign: "middle", textAlign: "center" }}>
-                                            <img
-                                                src="/assets/dots-vertical.png"
-                                                alt="Options"
-                                                style={{ cursor: "pointer", width: "20px", height: "20px" }}
-                                                onClick={() => alert(`Options for ${row.name}`)}
-                                            />
-                                        </td> */}
                                     </tr>
                                 ))}
                             </tbody>
@@ -377,6 +294,8 @@ function Assignments() {
                     </div>
                 </div>
             </main>
+
+            <ToastContainer />
         </Container>
     );
 }

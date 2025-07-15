@@ -17,7 +17,7 @@ function Timetable() {
     const [selectedYear, setSelectedYear] = useState("2024-2025");
     const [sortBy, setSortBy] = useState("courseName");
     const [sortOrder, setSortOrder] = useState("asc");
-    const departments = ["All", ...new Set(sections.map(section => section.department))];
+    const departments = ["All", ...new Set(sections.map(section => section?.department?.name))];
     const years = ["2024-2025", "2023-2024", "2022-2023", "2021-2022"];
     const searchPlaceholder = "Search courses, rooms, departments...";
     const sortOptions = [
@@ -56,24 +56,6 @@ function Timetable() {
         ).join(', ');
     };
 
-    const generateAvatars = (studentCount) => {
-        const avatarOptions = [
-            "/assets/Avatar3.png",
-            "/assets/Avatar4.png",
-            "/assets/Avatar5.png",
-            "/assets/avatar.jpeg"
-        ];
-
-        const displayCount = Math.min(studentCount, 4);
-        const avatars = [];
-
-        for (let i = 0; i < displayCount; i++) {
-            avatars.push(avatarOptions[i % avatarOptions.length]);
-        }
-
-        return avatars;
-    };
-
     useEffect(() => {
         const convertSectionsToTimetable = () => {
             if (!sections || sections.length === 0) {
@@ -85,21 +67,25 @@ function Timetable() {
 
             try {
                 const timetableData = sections.map((section, index) => {
-                    const teacher = section.teachers && section.teachers.length > 0 ? section.teachers[0] : null;
+                    const teacher = section?.teachers && section.teachers.length > 0 ? section.teachers[0] : null;
                     const studentCount = section.students ? section.students.length : 0;
+
+                    const avatars = section?.students
+                        .filter(student => student.profile_pic && typeof student.profile_pic === 'string')
+                        .map(student => student.profile_pic);
 
                     return {
                         id: section.id || `section-${index}`,
-                        courseName: section.course_name || "Unknown Course",
+                        courseName: section?.course?.name || "Unknown Course",
                         roomNo: section.room_no || "TBA",
                         studentCount: studentCount,
-                        department: section.department || "Unknown Department",
-                        section: section.section || "N/A",
+                        department: section?.department?.name || "Unknown Department",
+                        section: section?.section || "N/A",
                         teacher: teacher,
-                        teacherName: getTeacherNames(section.teachers),
-                        schedule: section.schedule,
-                        scheduleText: getScheduleText(section.schedule),
-                        avatars: generateAvatars(studentCount),
+                        teacherName: getTeacherNames(section?.teachers),
+                        schedule: section?.schedule,
+                        scheduleText: getScheduleText(section?.schedule),
+                        avatars: avatars,
                         year: "2024-2025",
                         originalSection: section
                     };
@@ -122,7 +108,7 @@ function Timetable() {
         let results = [...tableData];
 
         if (selectedDepartment !== "All") {
-            results = results.filter(item => item.department === selectedDepartment);
+            results = results.filter(item => item?.department?.name === selectedDepartment);
         }
 
         if (selectedYear) {

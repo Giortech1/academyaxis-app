@@ -83,12 +83,12 @@ function TeacherStudents() {
                             name: `${student.first_name || 'Unknown'} ${student.last_name || 'Student'}`,
                             email: student.email || 'N/A',
                             phone: student.phone_no || 'N/A',
-                            department: section.department || 'Unknown Department',
+                            department: section?.department?.name || 'Unknown Department',
                             attendance: attendance,
-                            profileImage: student.profile_pic || "/assets/Avatar6.png",
-                            section: section.section,
-                            courseName: section.course_name,
-                            roomNo: section.room_no,
+                            profileImage: student?.profile_pic || "/assets/Avatar6.png",
+                            section: section?.section,
+                            courseName: section?.course?.name,
+                            roomNo: section?.room_no,
                             dateOfBirth: student.dateOfBirth,
                             gender: student.gender,
                             homeAddress: student.home_address,
@@ -179,7 +179,7 @@ function TeacherStudents() {
                             <h1 className="page-title">Students</h1>
                             {selectedSection && (
                                 <p className="section-subtitle">
-                                    {selectedSection.course_name} - Section {selectedSection.section}
+                                    {selectedSection?.course?.name} - Section {selectedSection.section}
                                     <span className="student-count">
                                         ({filteredData.length} student{filteredData.length !== 1 ? 's' : ''})
                                     </span>
@@ -221,7 +221,7 @@ function TeacherStudents() {
                         {selectedSection && (
                             <>
                                 <div className="info-pill">
-                                    <span>{selectedSection.department}</span>
+                                    <span>{selectedSection?.department?.name}</span>
                                 </div>
                                 <div className="info-pill">
                                     <span>Room: {selectedSection.room_no}</span>

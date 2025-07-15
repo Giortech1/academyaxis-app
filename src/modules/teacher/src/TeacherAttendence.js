@@ -9,7 +9,7 @@ function Attendance() {
     const [searchText, setSearchText] = useState("");
     const [attendanceData, setAttendanceData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
-    
+
     const navigate = useNavigate();
 
     const handleCardClick = (data) => {
@@ -34,7 +34,7 @@ function Attendance() {
         const diffMs = end - start;
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        
+
         if (diffHours === 1 && diffMinutes === 0) {
             return "1 hour";
         } else if (diffHours > 1 && diffMinutes === 0) {
@@ -46,7 +46,6 @@ function Attendance() {
         }
     };
 
-    // Function to convert sections data to attendance format
     const convertSectionsToAttendance = () => {
         if (!sections || sections.length === 0) {
             return [];
@@ -55,11 +54,10 @@ function Attendance() {
         return sections.map((section, index) => {
             const teacher = section.teachers && section.teachers.length > 0 ? section.teachers[0] : null;
             const studentsCount = section.students ? section.students.length : 0;
-            
-            // Calculate new admissions (students created in last 30 days)
+
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            
+
             const newAdmissions = section.students ? section.students.filter(student => {
                 if (student.createdAt) {
                     const studentCreatedDate = new Date(student.createdAt);
@@ -68,50 +66,44 @@ function Attendance() {
                 return false;
             }).length : 0;
 
-            // Format time range
             const startTime = section.schedule?.start_time;
             const endTime = section.schedule?.end_time;
-            const timeRange = startTime && endTime 
+            const timeRange = startTime && endTime
                 ? `${convertTo12Hour(startTime)} - ${convertTo12Hour(endTime)}`
                 : "No schedule";
-            
+
             const duration = calculateDuration(startTime, endTime);
 
-            // Generate random avatars for display (in real app, these would be student photos)
-            const avatars = [
-                "/assets/Avatar3.png",
-                "/assets/Avatar4.png", 
-                "/assets/Avatar5.png",
-                "/assets/avatar.jpeg"
-            ];
+            const avatars = section?.students
+                .filter(student => student.profile_pic && typeof student.profile_pic === 'string')
+                .map(student => student.profile_pic);
 
             return {
                 id: section.id || `section-${index + 1}`,
-                section: `${section.course_name} - ${section.section}`,
-                department: section.department,
+                section: `${section?.course?.name} - ${section?.section}`,
+                department: section?.department?.name,
                 totalStudents: studentsCount,
                 newAdmissions: newAdmissions,
                 time: timeRange,
                 duration: duration,
                 teacher: teacher,
-                students: section.students || [],
-                schedule: section.schedule,
-                roomNo: section.room_no,
+                students: section?.students || [],
+                schedule: section?.schedule,
+                roomNo: section?.room_no,
                 avatars: avatars,
-                courseName: section.course_name,
-                sectionLetter: section.section
+                courseName: section?.course?.name,
+                sectionLetter: section?.section
             };
         });
     };
 
-    // Filter data based on search text
     const filterData = (data, searchQuery) => {
         if (!searchQuery.trim()) {
             return data;
         }
-        
+
         const query = searchQuery.toLowerCase();
-        return data.filter(item => 
+        return data.filter(item =>
             item.section.toLowerCase().includes(query) ||
             item.department.toLowerCase().includes(query) ||
             item.courseName?.toLowerCase().includes(query) ||
@@ -119,14 +111,12 @@ function Attendance() {
         );
     };
 
-    // Convert sections data when component mounts or sections change
     useEffect(() => {
         const convertedData = convertSectionsToAttendance();
         setAttendanceData(convertedData);
         setFilteredData(convertedData);
     }, [sections]);
 
-    // Filter data when search text changes
     useEffect(() => {
         const filtered = filterData(attendanceData, searchText);
         setFilteredData(filtered);
@@ -144,14 +134,14 @@ function Attendance() {
                     {/* Right side: User Info and Dropdown */}
                     <div className="header-right">
                         <img
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             className="user-avatar"
                         />
                         <div className="user-info">
                             <div className="user-name">
-                                {userData?.first_name && userData?.last_name 
-                                    ? `${userData.first_name} ${userData.last_name}` 
+                                {userData?.first_name && userData?.last_name
+                                    ? `${userData.first_name} ${userData.last_name}`
                                     : "John Doe"}
                             </div>
                             <div className="user-id">
@@ -220,8 +210,8 @@ function Attendance() {
                     {filteredData.length === 0 ? (
                         <div className="no-results">
                             <p>
-                                {searchText ? 
-                                    `No classes found matching "${searchText}"` : 
+                                {searchText ?
+                                    `No classes found matching "${searchText}"` :
                                     "No classes available"
                                 }
                             </p>
@@ -244,29 +234,29 @@ function Attendance() {
                                             <p className="students-label">Total Students in Class</p>
                                             <h2 className="students-count">{data.totalStudents}</h2>
 
-                                            {data.newAdmissions > 0 && (
+                                            {data?.newAdmissions > 0 && (
                                                 <p className="new-admissions">
-                                                    <Image 
-                                                        src="/assets/1.png" 
-                                                        width={20} 
-                                                        height={20} 
-                                                        className="me-1" 
-                                                        alt="New Admission" 
+                                                    <Image
+                                                        src="/assets/1.png"
+                                                        width={20}
+                                                        height={20}
+                                                        className="me-1"
+                                                        alt="New Admission"
                                                     />
                                                     +{data.newAdmissions} New Admission
                                                     {data.newAdmissions > 1 ? 's' : ''}
                                                 </p>
                                             )}
 
-                                            {data.totalStudents > 0 && (
+                                            {data?.totalStudents > 0 && (
                                                 <div className="avatars-container">
-                                                    {data.avatars.slice(0, 3).map((avatar, index) => (
-                                                        <Image 
+                                                    {data?.avatars?.slice(0, 3).map((avatar, index) => (
+                                                        <Image
                                                             key={index}
-                                                            src={avatar} 
-                                                            roundedCircle 
-                                                            width={30} 
-                                                            height={30} 
+                                                            src={avatar}
+                                                            roundedCircle
+                                                            width={30}
+                                                            height={30}
                                                             className={`avatar ${index > 0 ? 'overlapped' : ''}`}
                                                         />
                                                     ))}
@@ -280,37 +270,37 @@ function Attendance() {
 
                                             {data.teacher && (
                                                 <p className="teacher-info">
-                                                    <Image 
-                                                        src="/assets/teacher.png" 
-                                                        width={14} 
-                                                        height={14} 
-                                                        className="me-1" 
-                                                        alt="Teacher" 
+                                                    <Image
+                                                        src="/assets/teacher.png"
+                                                        width={14}
+                                                        height={14}
+                                                        className="me-1"
+                                                        alt="Teacher"
                                                     />
-                                                    {data.teacher.first_name} {data.teacher.last_name}
+                                                    {data.teacher.full_name}
                                                 </p>
                                             )}
 
                                             <p className="schedule-time">
-                                                <Image 
-                                                    src="/assets/clock.png" 
-                                                    width={14} 
-                                                    height={14} 
-                                                    className="me-1" 
-                                                    alt="Time" 
+                                                <Image
+                                                    src="/assets/clock.png"
+                                                    width={14}
+                                                    height={14}
+                                                    className="me-1"
+                                                    alt="Time"
                                                 />
-                                                {data.time} 
+                                                {data.time}
                                                 {data.duration !== "N/A" && ` (${data.duration})`}
                                             </p>
 
                                             {data.schedule?.days && (
                                                 <p className="schedule-days">
-                                                    <Image 
-                                                        src="/assets/calendar.png" 
-                                                        width={14} 
-                                                        height={14} 
-                                                        className="me-1" 
-                                                        alt="Days" 
+                                                    <Image
+                                                        src="/assets/calendar.png"
+                                                        width={14}
+                                                        height={14}
+                                                        className="me-1"
+                                                        alt="Days"
                                                     />
                                                     {data.schedule.days.join(', ')}
                                                 </p>
@@ -323,7 +313,7 @@ function Attendance() {
                     )}
                 </Container>
             </main>
-            
+
             <AttendanceStyles />
         </Container>
     );

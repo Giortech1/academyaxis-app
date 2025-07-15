@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -221,17 +221,38 @@ export const UserProvider = ({ children }) => {
             const sectionsRef = collection(db, 'sections');
             const snapshot = await getDocs(sectionsRef);
 
-            const teacherSections = snapshot.docs
-                .filter((doc) => {
-                    const teachers = doc.data().teachers || [];
-                    return teachers.some((t) => t && t.teacher_id === teacherId);
-                })
-                .map((doc) => ({ id: doc.id, ...doc.data() }));
+            const teacherSections = [];
+
+            for (const doc of snapshot.docs) {
+                const data = doc.data();
+                const teachers = data.teachers || [];
+
+                const isTeacherMatched = teachers.some(
+                    (t) => t && t.teacher_id === teacherId
+                );
+
+                if (isTeacherMatched) {
+                    const studentsRef = collection(db, 'sections', doc.id, 'students');
+                    const studentsSnapshot = await getDocs(studentsRef);
+
+                    const students = studentsSnapshot.docs.map((studentDoc) => ({
+                        id: studentDoc.id,
+                        student_id: studentDoc.id,
+                        ...studentDoc.data(),
+                    }));
+
+                    teacherSections.push({
+                        id: doc.id,
+                        ...data,
+                        students,
+                    });
+                }
+            }
 
             setSections(teacherSections);
             return { success: true, data: teacherSections };
         } catch (error) {
-            console.error(error);
+            console.error('Error fetching teacher sections with students:', error);
             return { success: false, message: error.message };
         }
     };
@@ -396,7 +417,7 @@ export const UserProvider = ({ children }) => {
             return { success: false, message: error.message };
         }
     };
-    
+
     const saveAttendance = async (sectionId, attendanceData) => {
         try {
             const { date, teacherId, courseName, students } = attendanceData;
@@ -595,6 +616,146 @@ export const UserProvider = ({ children }) => {
         }
     };
 
+    const createAssignment = async (assignmentData) => {
+        try {
+            const assignmentsRef = collection(db, "sections", assignmentData.sectionId, "assignments");
+
+            const assignmentToSave = {
+                ...assignmentData,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+
+            const docRef = await addDoc(assignmentsRef, assignmentToSave);
+
+            console.log("Assignment created successfully with ID:", docRef.id);
+
+            return {
+                success: true,
+                message: assignmentData.isDraft
+                    ? "Assignment saved as draft successfully!"
+                    : "Assignment published successfully!",
+                assignmentId: docRef.id
+            };
+
+        } catch (error) {
+            console.error("Error creating assignment:", error);
+
+            let errorMessage = "Failed to create assignment. Please try again.";
+
+            if (error.code === 'permission-denied') {
+                errorMessage = "You don't have permission to create assignments for this section.";
+            } else if (error.code === 'not-found') {
+                errorMessage = "Section not found. Please select a valid section.";
+            } else if (error.code === 'unavailable') {
+                errorMessage = "Service temporarily unavailable. Please try again later.";
+            }
+
+            return {
+                success: false,
+                message: errorMessage,
+                error: error.message
+            };
+        }
+    };
+
+    const createQuiz = async (quizData) => {
+        try {
+            const assignmentsRef = collection(db, "sections", quizData?.sectionId, "quizzes");
+
+            const quizToSave = {
+                ...quizData,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+
+            const docRef = await addDoc(assignmentsRef, quizToSave);
+
+            console.log("Quiz created successfully with ID:", docRef.id);
+
+            return {
+                success: true,
+                message: quizData.isDraft
+                    ? "Quiz saved as draft successfully!"
+                    : "Quiz published successfully!",
+                quizId: docRef.id
+            };
+
+        } catch (error) {
+            console.error("Error creating quiz:", error);
+
+            let errorMessage = "Failed to create quiz. Please try again.";
+
+            if (error.code === 'permission-denied') {
+                errorMessage = "You don't have permission to create quizzes for this section.";
+            } else if (error.code === 'not-found') {
+                errorMessage = "Section not found. Please select a valid section.";
+            } else if (error.code === 'unavailable') {
+                errorMessage = "Service temporarily unavailable. Please try again later.";
+            }
+
+            return {
+                success: false,
+                message: errorMessage,
+                error: error.message
+            };
+        }
+    };
+
+    const fetchAssignments = async (sectionId) => {
+        try {
+            if (!sectionId) {
+                throw new Error('Section ID is required');
+            }
+
+            const assignmentsRef = collection(db, 'sections', sectionId, 'assignments');
+            const snapshot = await getDocs(assignmentsRef);
+
+            const assignments = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            return {
+                success: true,
+                data: assignments,
+            };
+        } catch (error) {
+            console.error('Error fetching assignments:', error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
+    const fetchQuizzes = async (sectionId) => {
+        try {
+            if (!sectionId) {
+                throw new Error('Section ID is required');
+            }
+
+            const quizzesRef = collection(db, 'sections', sectionId, 'quizzes');
+            const snapshot = await getDocs(quizzesRef);
+
+            const quizzes = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            return {
+                success: true,
+                data: quizzes,
+            };
+        } catch (error) {
+            console.error('Error fetching quizzes:', error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
     const value = {
         user,
         userData,
@@ -625,7 +786,11 @@ export const UserProvider = ({ children }) => {
         getAllAttendanceForSection,
         updateAttendance,
         getStudentAttendanceStats,
-        getAttendanceSummary
+        getAttendanceSummary,
+        createAssignment,
+        createQuiz,
+        fetchAssignments,
+        fetchQuizzes
     };
 
     return (
