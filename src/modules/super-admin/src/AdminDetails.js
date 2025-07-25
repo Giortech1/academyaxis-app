@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Form, Button, Table, Row, Col } from 'react-bootstrap';
+import { UserContext } from './UserContext';
 
 // Mock admins data
 const initialAdminsData = [
@@ -22,7 +23,7 @@ const initialAdminsData = [
         lastActive: "12-02-25",
         image: "/assets/student2.jpg"
     },
-     {
+    {
         id: 3,
         name: "Demo Name",
         adminId: "12345678",
@@ -40,7 +41,7 @@ const initialAdminsData = [
         lastActive: "12-02-25",
         image: "/assets/student2.jpg"
     },
-     {
+    {
         id: 5,
         name: "Demo Name",
         adminId: "12345678",
@@ -58,7 +59,7 @@ const initialAdminsData = [
         lastActive: "12-02-25",
         image: "/assets/student2.jpg"
     },
-     {
+    {
         id: 7,
         name: "Demo Name",
         adminId: "12345678",
@@ -79,6 +80,7 @@ const initialAdminsData = [
 ];
 
 const AdminsList = () => {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
 
     // State variables
@@ -171,7 +173,7 @@ const AdminsList = () => {
                         height: '36px'
                     }}>
                         <img
-                            src="/assets/profile.jpg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="Profile"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {
@@ -181,8 +183,8 @@ const AdminsList = () => {
                         />
                     </div>
                     <div>
-                        <div style={{ fontWeight: '500', fontSize: '14px', color: '#1F2937' }}>Mian Hamad Khalil</div>
-                        <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: '400' }}>14785200</div>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: '#1F2937' }}>{userData?.full_name}</div>
+                        <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: '400' }}>{userData?.admin_id}0</div>
                     </div>
                 </div>
             </div>
@@ -190,10 +192,10 @@ const AdminsList = () => {
             {/* Main Content */}
             <div className="p-0">
                 {/* Header with Title, Search and Add Admin button in the same row */}
-                <div className="d-flex justify-content-between align-items-center " style={{padding:"30px 0px"}}>
+                <div className="d-flex justify-content-between align-items-center " style={{ padding: "30px 0px" }}>
                     {/* Page Title - Left side */}
                     <h5 className="mb-0" style={{ fontSize: '20px', fontWeight: '600', color: '#111827' }}>Admins</h5>
-                    
+
                     {/* Search and Add Admin - Right side */}
                     <div className="d-flex align-items-center gap-3">
                         {/* Search Field */}
@@ -247,13 +249,13 @@ const AdminsList = () => {
                                 gap: '8px',
                             }}
                         >
-                            <span style={{ 
-                                display: 'inline-block', 
-                                width: '20px', 
-                                height: '20px', 
-                                lineHeight: '18px', 
+                            <span style={{
+                                display: 'inline-block',
+                                width: '20px',
+                                height: '20px',
+                                lineHeight: '18px',
                                 textAlign: 'center',
-                                fontSize: '20px' 
+                                fontSize: '20px'
                             }}>+</span>
                             <span>Add Admin</span>
                         </Button>

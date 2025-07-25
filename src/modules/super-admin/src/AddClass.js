@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Container, Card, Button, Image, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from './UserContext';
 
 const CalendarGridScreen = () => {
+    const { userData } = useContext(UserContext);
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
@@ -61,7 +63,7 @@ const CalendarGridScreen = () => {
     const teachers = [
         { id: 1, name: "Kevin Jone" },
         { id: 2, name: "Lisa Smith" },
-        { id: 3, name: "John Doe" },
+        { id: 3, name: "John Daoe" },
         { id: 4, name: "Sarah Brown" }
     ];
 
@@ -114,7 +116,7 @@ const CalendarGridScreen = () => {
                 endTime: "3:00 pm",
                 subject: "Chemistry Class",
                 room: "Room no.3",
-                teacher: "John Doe",
+                teacher: "John Daoe",
                 color: "#FFF5E5",
             },
             {
@@ -392,14 +394,14 @@ const CalendarGridScreen = () => {
 
                 <div className="d-flex align-items-center">
                     <img
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="User"
                         className="rounded-circle me-2"
                         style={{ width: "54px", height: "54px" }}
                     />
                     <div className="me-0">
-                        <div style={{ fontWeight: "500", fontSize: "14px" }}>Mian Hamad Khalil</div>
-                        <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                        <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+                        <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
                     </div>
 
                 </div>

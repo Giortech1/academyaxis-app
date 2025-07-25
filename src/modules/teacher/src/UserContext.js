@@ -1,10 +1,11 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, orderBy, serverTimestamp, onSnapshot, increment } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import { TeacherPortalLoading } from './TeacherPortalLoading';
 
 export const UserContext = createContext();
 
@@ -25,8 +26,6 @@ export const UserProvider = ({ children }) => {
                     const userDoc = await getDoc(doc(db, 'users', authUser.uid));
                     setUserData(userDoc.exists() ? userDoc.data() : null);
 
-                    await refreshAdminData();
-                    await refreshDeptsData();
                     await refreshTeacherSection(userDoc.data()?.teacher_id);
                 } else {
                     setUser(null);
@@ -42,7 +41,6 @@ export const UserProvider = ({ children }) => {
         return () => unsubscribe();
     }, []);
 
-
     const registerUser = async (data) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
@@ -50,7 +48,6 @@ export const UserProvider = ({ children }) => {
 
             await setDoc(doc(db, 'users', user.uid), data);
 
-            {/*  toast.success("Registration Successful! You can now explore and enjoy all the features.");*/ }
             console.log('User registered and data saved in Firestore:', user);
 
             return { success: true, uid: user.uid };
@@ -93,7 +90,6 @@ export const UserProvider = ({ children }) => {
                 const data = userDoc.data();
                 setUserData(data);
 
-                toast.success("Login Successful! Welcome back.");
                 navigate('/TDashboard');
 
                 return { success: true };
@@ -756,6 +752,612 @@ export const UserProvider = ({ children }) => {
         }
     };
 
+    const updateAssignmentById = async (sectionId, assignmentId, studentId, updatedSubmissionData) => {
+        try {
+            if (!sectionId || !assignmentId || !studentId) {
+                throw new Error("Section ID, Assignment ID, and Student ID are required");
+            }
+
+            const assignmentRef = doc(db, 'sections', sectionId, 'assignments', assignmentId);
+            const assignmentSnap = await getDoc(assignmentRef);
+
+            if (!assignmentSnap.exists()) {
+                throw new Error("Assignment not found");
+            }
+
+            const assignmentData = assignmentSnap.data();
+            const submittedArray = Array.isArray(assignmentData.submitted) ? [...assignmentData.submitted] : [];
+
+            const index = submittedArray.findIndex(sub => sub.studentId === studentId);
+
+            if (index === -1) {
+                throw new Error("Submission by this student not found");
+            }
+
+            submittedArray[index] = {
+                ...submittedArray[index],
+                ...updatedSubmissionData,
+            };
+
+            await updateDoc(assignmentRef, {
+                submitted: submittedArray
+            });
+
+            return {
+                success: true,
+                message: "Submission updated successfully"
+            };
+        } catch (error) {
+            console.error("Error updating assignment submission:", error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
+    const updateQuizById = async (sectionId, quizId, studentId, updatedSubmissionData) => {
+        try {
+            if (!sectionId || !quizId || !studentId) {
+                throw new Error("Section ID, Assignment ID, and Student ID are required");
+            }
+
+            const quizRef = doc(db, 'sections', sectionId, 'quizzes', quizId);
+            const quizSnap = await getDoc(quizRef);
+
+            if (!quizSnap.exists()) {
+                throw new Error("Quiz not found");
+            }
+
+            const quizData = quizSnap.data();
+            const submittedArray = Array.isArray(quizData.submitted) ? [...quizData.submitted] : [];
+
+            const index = submittedArray.findIndex(sub => sub.studentId === studentId);
+
+            if (index === -1) {
+                throw new Error("Submission by this student not found");
+            }
+
+            submittedArray[index] = {
+                ...submittedArray[index],
+                ...updatedSubmissionData,
+            };
+
+            await updateDoc(quizRef, {
+                submitted: submittedArray
+            });
+
+            return {
+                success: true,
+                message: "Submission updated successfully"
+            };
+        } catch (error) {
+            console.error("Error updating quiz submission:", error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
+    const createAnnouncement = async (announcementData) => {
+        try {
+            const colRef = collection(db, "announcements");
+            const docRef = await addDoc(colRef, {});
+
+            const dataWithId = { ...announcementData, id: docRef.id };
+            await setDoc(docRef, dataWithId);
+
+            console.log("Announcement created with ID:", docRef.id);
+            return { success: true, id: docRef.id };
+        } catch (error) {
+            console.error("Error creating announcement:", error);
+            return { success: false, message: error.message };
+        }
+    };
+
+    const fetchAnnouncements = async (userId) => {
+        try {
+            const announcementsRef = collection(db, "announcements");
+
+            const queryTeachers = query(
+                announcementsRef,
+                where("type", "==", "Teachers")
+            );
+
+            const queryAll = query(
+                announcementsRef,
+                where("type", "==", "All")
+            );
+
+            const queryByUser = query(
+                announcementsRef,
+                where("createdBy.id", "==", userId)
+            );
+
+            const [teachersSnap, allSnap, userSnap] = await Promise.all([
+                getDocs(queryTeachers),
+                getDocs(queryAll),
+                getDocs(queryByUser),
+            ]);
+
+            const fromTeachers = teachersSnap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            const fromAll = allSnap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            const fromUser = userSnap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            const combined = [...fromTeachers, ...fromAll, ...fromUser];
+
+            const unique = Array.from(
+                new Map(combined.map(item => [item.id, item])).values()
+            );
+
+            return { success: true, data: unique };
+        } catch (error) {
+            console.error("Error fetching announcements:", error);
+            return { success: false, data: [] };
+        }
+    };
+
+    const createChat = async (participantId) => {
+        try {
+            if (!user || !userData) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            const currentUserId = user.uid;
+
+            const existingChat = await findExistingChat(currentUserId, participantId);
+            if (existingChat.success) {
+                return { success: true, chatId: existingChat.chatId, message: 'Chat already exists' };
+            }
+
+            const participantDoc = await getDoc(doc(db, 'users', participantId));
+            const participantData = participantDoc.exists() ? participantDoc.data() : {};
+            const currentTimestamp = new Date();
+
+            const chatRef = await addDoc(collection(db, 'chats'), {
+                participants: [currentUserId, participantId],
+                participantData: {
+                    [currentUserId]: {
+                        name: userData?.full_name || userData?.email,
+                        email: userData?.email,
+                        avatar: userData?.profile_pic || null,
+                        lastSeen: currentTimestamp,
+                        unreadCount: 0
+                    },
+                    [participantId]: {
+                        name: participantData?.full_name || participantData?.email || 'Unknown User',
+                        email: participantData?.email || '',
+                        avatar: participantData?.profile_pic || null,
+                        lastSeen: currentTimestamp,
+                        unreadCount: 0
+                    }
+                },
+                messages: [],
+                lastMessage: {
+                    text: '',
+                    senderId: '',
+                    timestamp: currentTimestamp,
+                    messageIndex: -1
+                },
+                totalMessages: 0,
+                createdAt: currentTimestamp,
+                updatedAt: currentTimestamp
+            });
+
+            console.log('New chat doc created!');
+            return { success: true, chatId: chatRef.id };
+        } catch (error) {
+            console.error('Error creating chat:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const findExistingChat = async (userId1, userId2) => {
+        try {
+            const chatsRef = collection(db, 'chats');
+            const q = query(
+                chatsRef,
+                where('participants', 'array-contains', userId1)
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            for (const doc of querySnapshot.docs) {
+                const chatData = doc.data();
+                if (chatData.participants.includes(userId2)) {
+                    return { success: true, chatId: doc.id, data: chatData };
+                }
+            }
+
+            return { success: false, message: 'No existing chat found' };
+        } catch (error) {
+            console.error('Error finding existing chat:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const getUserChats = async () => {
+        try {
+            if (!user) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            const chatsRef = collection(db, 'chats');
+            const q = query(
+                chatsRef,
+                where('participants', 'array-contains', user.uid),
+                orderBy('updatedAt', 'desc')
+            );
+
+            const querySnapshot = await getDocs(q);
+            const chats = [];
+
+            querySnapshot.forEach((doc) => {
+                const chatData = doc.data();
+                const otherUserId = chatData.participants.find(id => id !== user.uid);
+                const otherUserData = chatData.participantData[otherUserId];
+                const currentUserData = chatData.participantData[user.uid];
+
+                chats.push({
+                    id: doc.id,
+                    ...chatData,
+                    otherUser: {
+                        id: otherUserId,
+                        ...otherUserData
+                    },
+                    unreadCount: currentUserData?.unreadCount || 0
+                });
+            });
+
+            return { success: true, data: chats };
+        } catch (error) {
+            console.error('Error getting user chats:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const sendMessage = async (chatId, messageText, messageType = 'text') => {
+        try {
+            if (!user || !userData) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            if (!messageText.trim()) {
+                return { success: false, error: 'Message cannot be empty' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const otherUserId = chatData.participants.find(id => id !== user.uid);
+            const currentTimestamp = new Date();
+
+            const newMessage = {
+                id: `${Date.now()}_${user.uid}`,
+                text: messageText,
+                senderId: user.uid,
+                senderName: userData?.full_name || userData?.email,
+                senderAvatar: userData?.profile_pic || null,
+                type: messageType,
+                timestamp: currentTimestamp,
+                deleted: false
+            };
+
+            await updateDoc(chatRef, {
+                messages: arrayUnion(newMessage),
+                lastMessage: {
+                    text: messageText,
+                    senderId: user.uid,
+                    senderName: userData?.full_name || userData?.email,
+                    timestamp: currentTimestamp,
+                    messageIndex: (chatData.totalMessages || 0)
+                },
+                totalMessages: increment(1),
+                updatedAt: currentTimestamp,
+                [`participantData.${user.uid}.lastSeen`]: currentTimestamp,
+                [`participantData.${otherUserId}.unreadCount`]: increment(1)
+            });
+
+            return { success: true, message: 'Message sent successfully' };
+        } catch (error) {
+            console.error('Error sending message:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const getChatMessages = async (chatId) => {
+        try {
+            if (!chatId) {
+                return { success: false, error: 'Chat ID is required' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const sortedMessages = messages.sort((a, b) => {
+                if (a.timestamp && b.timestamp) {
+                    return a.timestamp.seconds - b.timestamp.seconds;
+                }
+                return 0;
+            });
+
+            return { success: true, data: sortedMessages };
+        } catch (error) {
+            console.error('Error getting chat messages:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const subscribeToMessages = (chatId, callback) => {
+        try {
+            if (!chatId) {
+                throw new Error('Chat ID is required');
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            let lastMessageCount = 0;
+
+            const unsubscribe = onSnapshot(chatRef, (doc) => {
+                if (doc.exists()) {
+                    const chatData = doc.data();
+                    const messages = chatData.messages || [];
+
+                    if (messages.length !== lastMessageCount) {
+                        lastMessageCount = messages.length;
+
+                        const sortedMessages = [...messages].sort((a, b) => {
+                            const timeA = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
+                            const timeB = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
+                            return timeA - timeB;
+                        });
+
+                        callback(sortedMessages);
+                    } else {
+                        callback([]);
+                    }
+                } else {
+                    callback([]);
+                }
+            });
+
+            return unsubscribe;
+        } catch (error) {
+            console.error('Error subscribing to messages:', error);
+            return null;
+        }
+    };
+
+    const subscribeToUserChats = (callback) => {
+        try {
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            const chatsRef = collection(db, 'chats');
+            const q = query(
+                chatsRef,
+                where('participants', 'array-contains', user.uid),
+                orderBy('updatedAt', 'desc')
+            );
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const chats = [];
+                snapshot.forEach((doc) => {
+                    const chatData = doc.data();
+                    const otherUserId = chatData.participants.find(id => id !== user.uid);
+                    const otherUserData = chatData.participantData[otherUserId];
+                    const currentUserData = chatData.participantData[user.uid];
+
+                    chats.push({
+                        id: doc.id,
+                        ...chatData,
+                        otherUser: {
+                            id: otherUserId,
+                            ...otherUserData
+                        },
+                        unreadCount: currentUserData?.unreadCount || 0
+                    });
+                });
+                callback(chats);
+            });
+
+            return unsubscribe;
+        } catch (error) {
+            console.error('Error subscribing to user chats:', error);
+            return null;
+        }
+    };
+
+    const markMessagesAsRead = async (chatId) => {
+        try {
+            if (!user || !chatId) {
+                return { success: false, error: 'User not authenticated or chat ID missing' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const currentTimestamp = new Date();
+
+            await updateDoc(chatRef, {
+                [`participantData.${user.uid}.lastSeen`]: currentTimestamp,
+                [`participantData.${user.uid}.unreadCount`]: 0
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error marking messages as read:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const deleteMessage = async (chatId, messageId) => {
+        try {
+            if (!user) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const updatedMessages = messages.map(msg => {
+                if (msg.id === messageId && msg.senderId === user.uid) {
+                    return {
+                        ...msg,
+                        text: 'This message was deleted',
+                        deleted: true,
+                        deletedAt: serverTimestamp()
+                    };
+                }
+                return msg;
+            });
+
+            await updateDoc(chatRef, {
+                messages: updatedMessages,
+                updatedAt: serverTimestamp()
+            });
+
+            return { success: true, message: 'Message deleted successfully' };
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const searchUsers = async (searchTerm) => {
+        try {
+            if (!searchTerm.trim()) {
+                return { success: false, error: 'Search term is required' };
+            }
+
+            const usersRef = collection(db, 'users');
+            const querySnapshot = await getDocs(usersRef);
+
+            const users = [];
+            querySnapshot.forEach((doc) => {
+                const userData = doc.data();
+                const searchFields = [
+                    userData.full_name || '',
+                    userData.email || '',
+                    userData.student_id || '',
+                    userData.teacher_id || ''
+                ].join(' ').toLowerCase();
+
+                if (searchFields.includes(searchTerm.toLowerCase()) && doc.id !== user.uid) {
+                    users.push({
+                        id: doc.id,
+                        ...userData
+                    });
+                }
+            });
+
+            return { success: true, data: users };
+        } catch (error) {
+            console.error('Error searching users:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const getChatStats = async (chatId) => {
+        try {
+            if (!chatId) {
+                return { success: false, error: 'Chat ID is required' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const stats = {
+                totalMessages: messages.length,
+                myMessages: messages.filter(msg => msg.senderId === user.uid).length,
+                otherMessages: messages.filter(msg => msg.senderId !== user.uid).length,
+                createdAt: chatData.createdAt,
+                lastActivity: chatData.updatedAt
+            };
+
+            return { success: true, data: stats };
+        } catch (error) {
+            console.error('Error getting chat stats:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const batchDeleteMessages = async (chatId, messageIds) => {
+        try {
+            if (!user || !messageIds.length) {
+                return { success: false, error: 'Invalid parameters' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const updatedMessages = messages.map(msg => {
+                if (messageIds.includes(msg.id) && msg.senderId === user.uid) {
+                    return {
+                        ...msg,
+                        text: 'This message was deleted',
+                        deleted: true,
+                        deletedAt: serverTimestamp()
+                    };
+                }
+                return msg;
+            });
+
+            await updateDoc(chatRef, {
+                messages: updatedMessages,
+                updatedAt: serverTimestamp()
+            });
+
+            return { success: true, message: 'Messages deleted successfully' };
+        } catch (error) {
+            console.error('Error batch deleting messages:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
     const value = {
         user,
         userData,
@@ -790,8 +1392,31 @@ export const UserProvider = ({ children }) => {
         createAssignment,
         createQuiz,
         fetchAssignments,
-        fetchQuizzes
+        fetchQuizzes,
+        updateAssignmentById,
+        updateQuizById,
+        createAnnouncement,
+        fetchAnnouncements,
+
+        createChat,
+        findExistingChat,
+        getUserChats,
+        sendMessage,
+        getChatMessages,
+        subscribeToMessages,
+        subscribeToUserChats,
+        markMessagesAsRead,
+        deleteMessage,
+        searchUsers,
+        getChatStats,
+        batchDeleteMessages,
+
+
     };
+
+    if (isLoading) {
+        return <TeacherPortalLoading isLoading={isLoading} />;
+    }
 
     return (
         <UserContext.Provider value={value}>

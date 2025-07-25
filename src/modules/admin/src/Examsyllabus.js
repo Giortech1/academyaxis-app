@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Row, Col, Card, Button, Image } from "react-bootstrap";
-// import Sidebar from "./Leftside";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 
 const Examsyllabus = () => {
-      const navigate = useNavigate();
-  
+  const { userData } = useContext(UserContext);
+  const navigate = useNavigate();
+
   return (
     <div className="d-flex">
       {/* Left Sidebar */}
@@ -18,23 +19,23 @@ const Examsyllabus = () => {
         {/* Header */}
         <header className="d-flex justify-content-between align-items-center mb-4" id="syllabusheader">
           <div id="examsyllabus" className="d-flex align-items-center">
-             <Image
-                                id="arrow-left"
-                                    src="/assets/arrow-left.png"
-                                    roundedCircle
-                                    width={24}
-                                    height={24}
-                                    className="me-2"
-                                    alt="Back Arrow"
-                                    style={{ cursor: "pointer" }}
-                                    onClick={() => navigate(-1)}
-                                />
+            <Image
+              id="arrow-left"
+              src="/assets/arrow-left.png"
+              roundedCircle
+              width={24}
+              height={24}
+              className="me-2"
+              alt="Back Arrow"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate(-1)}
+            />
             <h4 className="fw-bold mb-0">Math Syllabus for Exams</h4>
           </div>
           <div className="d-flex align-items-center" id="exam-avatar">
             <Image
               id="info-img"
-              src="/assets/avatar.jpeg" // Replace with profile avatar image
+              src={userData?.profile_pic || "/assets/avatar.jpeg"}
               alt="Profile"
               roundedCircle
               width={40}
@@ -43,9 +44,9 @@ const Examsyllabus = () => {
             />
             <div>
               <div style={{ fontSize: "14px", fontWeight: "600" }}>
-                Mian Hamad Khalil
+                {userData?.full_name}
               </div>
-              <div style={{ fontSize: "12px", color: "#6c757d" }}>14785200</div>
+              <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
             </div>
           </div>
         </header>
@@ -88,7 +89,7 @@ const Examsyllabus = () => {
 
           {/* Teacher Notes */}
           <Col md={4}>
-            <Card className="p-4  " style={{border:'1px solid #EAECF0', borderRadius:'12px', background:'#fff'}}>
+            <Card className="p-4  " style={{ border: '1px solid #EAECF0', borderRadius: '12px', background: '#fff' }}>
               <h5 className="fw-bold mb-3">Notes from Teacher</h5>
               <ul
                 style={{

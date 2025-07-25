@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Row, Col, Image, Button, Form, Dropdown } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 function CourseRoadmap() {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
     const [selectedSemester, setSelectedSemester] = useState("Semester 1");
     const [program, setProgram] = useState("Bachelor of Science in Computer Science");
@@ -54,7 +56,7 @@ function CourseRoadmap() {
                 department: "Computer Science",
                 semester: "Semester 1"
             },
-            
+
             // Semester 2 courses
             {
                 name: "Data Structures",
@@ -88,7 +90,7 @@ function CourseRoadmap() {
                 department: "Computer Science",
                 semester: "Semester 2"
             },
-            
+
             // Semester 3 courses
             {
                 name: "Object-Oriented Programming",
@@ -122,7 +124,7 @@ function CourseRoadmap() {
                 department: "Computer Science",
                 semester: "Semester 3"
             },
-            
+
             // Semester 4 courses
             {
                 name: "Operating Systems",
@@ -156,7 +158,7 @@ function CourseRoadmap() {
                 department: "Computer Science",
                 semester: "Semester 4"
             },
-            
+
             // Semester 5 courses
             {
                 name: "Algorithms Analysis",
@@ -190,7 +192,7 @@ function CourseRoadmap() {
                 department: "Computer Science",
                 semester: "Semester 5"
             },
-            
+
             // Semester 6 courses
             {
                 name: "Compiler Design",
@@ -224,7 +226,7 @@ function CourseRoadmap() {
                 department: "Computer Science",
                 semester: "Semester 6"
             },
-            
+
             // Semester 7 courses
             {
                 name: "Parallel Computing",
@@ -258,7 +260,7 @@ function CourseRoadmap() {
                 department: "Computer Science",
                 semester: "Semester 7"
             },
-            
+
             // Semester 8 courses
             {
                 name: "Senior Project II",
@@ -298,7 +300,7 @@ function CourseRoadmap() {
     }, []);
 
     // Filter courses based on selected semester
-    const filteredCourses = courses.filter(course => 
+    const filteredCourses = courses.filter(course =>
         course.semester === selectedSemester
     );
 
@@ -308,21 +310,21 @@ function CourseRoadmap() {
                 {/* Header with Title and User Profile */}
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h1 className="course-roadmap-title">Academic Calendar</h1>
-                    
+
                     <div className="user-profile">
                         <Dropdown>
                             <Dropdown.Toggle variant="light" id="dropdown-user" className="user-dropdown">
                                 <div className="d-flex align-items-center">
-                                    <Image 
-                                        src="/assets/avatar.jpeg" 
-                                        roundedCircle 
-                                        width={54} 
-                                        height={54} 
+                                    <Image
+                                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
+                                        roundedCircle
+                                        width={54}
+                                        height={54}
                                         className="me-2"
                                     />
                                     <div className="user-info">
-                                        <div className="user-name">Mian Hamad Khalil</div>
-                                        <div className="user-id">12783200</div>
+                                        <div className="user-name">{userData?.full_name}</div>
+                                        <div className="user-id">{userData?.student_id}</div>
                                     </div>
                                 </div>
                             </Dropdown.Toggle>
@@ -375,13 +377,13 @@ function CourseRoadmap() {
                         <tbody>
                             {filteredCourses.map((course, index) => (
                                 <tr key={index} className={index === filteredCourses.length - 1 ? 'last-row' : ''}>
-                                    <td style={{fontSize:'14px', fontWeight:'500', color:'#101828'}}>{course.name}</td>
-                                    <td style={{fontSize:'14px', fontWeight:'400', color:'#4B5563'}}>{course.courseId}</td>
-                                    <td style={{fontSize:'14px', fontWeight:'400', color:'#4B5563'}}>
-                                            {course.type}
+                                    <td style={{ fontSize: '14px', fontWeight: '500', color: '#101828' }}>{course.name}</td>
+                                    <td style={{ fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>{course.courseId}</td>
+                                    <td style={{ fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>
+                                        {course.type}
                                     </td>
-                                    <td style={{fontSize:'14px', fontWeight:'400', color:'#4B5563'}}>{course.creditHour}</td>
-                                    <td style={{fontSize:'14px', fontWeight:'400', color:'#4B5563'}}>{course.department}</td>
+                                    <td style={{ fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>{course.creditHour}</td>
+                                    <td style={{ fontSize: '14px', fontWeight: '400', color: '#4B5563' }}>{course.department}</td>
                                 </tr>
                             ))}
                         </tbody>

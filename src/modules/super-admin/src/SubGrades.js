@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Row, Col, Image, Card, Table } from "react-bootstrap";
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from "./UserContext";
 
 const SubGrades = () => {
+    const { userData } = useContext(UserContext);
     const summarizedGrades = [
         { type: "Quizzes", scores: [35, 40, 29, 35, 37, 35] },
         { type: "Assignments", scores: [29, 35, 23, 29, 35, 40] },
@@ -59,14 +61,14 @@ const SubGrades = () => {
                 <div className="d-flex align-items-center">
                     <img
                         id="info-img"
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="User"
                         className="rounded-circle me-2"
                         style={{ width: "54px", height: "54px" }}
                     />
                     <div className="me-0">
-                        <div style={{ fontWeight: "500", fontSize: "14px" }}>Mian Hamad Khalil</div>
-                        <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                        <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+                        <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
                     </div>
                     <button className="bg-transparent border-0">
                         <img

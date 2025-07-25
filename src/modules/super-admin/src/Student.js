@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "./UserContext";
 
 function Student() {
-    const { userData, registerUser, deptsData, fetchUsersByRole } = useContext(UserContext);
+    const { userData, deptsData, fetchUsersByRole } = useContext(UserContext);
     const navigate = useNavigate();
     const [searchText, setSearchText] = useState("");
     const [departmentValue, setDepartmentValue] = useState("");

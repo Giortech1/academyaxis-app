@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Button, Form, Image, Table, Modal, Row, Col, Card, InputGroup, FormControl } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 // Sample data for students
 const studentsData = [
@@ -232,6 +233,7 @@ const adminsData = [
 ];
 
 function AttendenceDetail() {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
     const [searchText, setSearchText] = useState("");
@@ -427,13 +429,13 @@ function AttendenceDetail() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <img
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             style={{ borderRadius: "50%", width: "54px", height: "54px", marginRight: "10px" }}
                         />
                         <div style={{ marginRight: "10px" }}>
-                            <div style={{ fontWeight: "500", fontSize: "14" }}>John Deo</div>
-                            <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                            <div style={{ fontWeight: "500", fontSize: "14" }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
                         </div>
                     </div>
                 </header>

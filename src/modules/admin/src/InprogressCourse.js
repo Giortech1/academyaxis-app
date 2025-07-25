@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Table, Image } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { UserContext } from "./UserContext";
 
 function Inprogress() {
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -63,7 +65,7 @@ function Inprogress() {
         </div>
         <div className="d-flex align-items-center">
           <img
-            src="/assets/avatar.jpeg"
+           src={userData?.profile_pic || "/assets/avatar.jpeg"}
             alt="User"
             style={{
               borderRadius: '50%',
@@ -73,8 +75,8 @@ function Inprogress() {
             }}
           />
           <div>
-            <div style={{ fontWeight: '500', fontSize: '14px' }}>Mian Hamad Khalil</div>
-            <div style={{ fontSize: '12px', color: '#6c757d' }}>14785200</div>
+            <div style={{ fontWeight: '500', fontSize: '14px' }}>{userData?.full_name}</div>
+            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.admin_id}</div>
           </div>
         </div>
       </div>

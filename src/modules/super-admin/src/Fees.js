@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import { Container, Button, Form, Table, Row, Col, Card, Modal, Spinner, Alert, Dropdown } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 // API service for fees
 const feesService = {
@@ -17,13 +18,13 @@ const feesService = {
       if (date) {
         params.append('date', date.toISOString());
       }
-      
+
       const response = await fetch(`${feesService.baseURL}/unpaid-students?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch unpaid students');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error("Error fetching unpaid students:", error);
@@ -39,13 +40,13 @@ const feesService = {
       if (date) {
         params.append('date', date.toISOString());
       }
-      
+
       const response = await fetch(`${feesService.baseURL}/fee-summary?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch fee summary');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error("Error fetching fee summary:", error);
@@ -63,11 +64,11 @@ const feesService = {
         },
         body: JSON.stringify({ studentId })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to send reminder');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error("Error sending reminder:", error);
@@ -162,8 +163,9 @@ const formatCurrency = (amount) => {
 };
 
 function Fees() {
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate();
-  
+
   // State variables
   const [searchText, setSearchText] = useState("");
   const [department, setDepartment] = useState("Department of Computer Science");
@@ -203,18 +205,18 @@ function Fees() {
         // Set unpaid students
         setUnpaidStudents(MOCK_DATA.unpaidStudents);
         setFilteredStudents(MOCK_DATA.unpaidStudents);
-        
+
         // Set fee summary
         setFeeSummary(MOCK_DATA.feeSummary);
-        
+
         setIsLoading(false);
       }, 1000);
-      
+
       // In a real app, you would use:
       // const unpaidStudentsData = await feesService.getUnpaidStudents(department, selectedDate);
       // setUnpaidStudents(unpaidStudentsData);
       // setFilteredStudents(unpaidStudentsData);
-      
+
       // const feeSummaryData = await feesService.getFeeSummary(department, selectedDate);
       // setFeeSummary(feeSummaryData);
     } catch (err) {
@@ -256,17 +258,17 @@ function Fees() {
   // Handle sort
   const handleSort = (option) => {
     setSortOption(option);
-    
+
     let sorted = [...filteredStudents];
-    
+
     switch (option) {
       case "amount-asc":
-        sorted.sort((a, b) => 
+        sorted.sort((a, b) =>
           parseInt(a.amount.replace(/,/g, "")) - parseInt(b.amount.replace(/,/g, ""))
         );
         break;
       case "amount-desc":
-        sorted.sort((a, b) => 
+        sorted.sort((a, b) =>
           parseInt(b.amount.replace(/,/g, "")) - parseInt(a.amount.replace(/,/g, ""))
         );
         break;
@@ -278,12 +280,12 @@ function Fees() {
         break;
       default:
         // Default order (no sorting)
-        sorted = [...unpaidStudents].filter(student => 
+        sorted = [...unpaidStudents].filter(student =>
           student.name.toLowerCase().includes(searchText.toLowerCase()) ||
           student.challanNo.includes(searchText)
         );
     }
-    
+
     setFilteredStudents(sorted);
   };
 
@@ -297,16 +299,16 @@ function Fees() {
   // Send reminder to student
   const sendReminder = async () => {
     if (!selectedStudent) return;
-    
+
     setSendingReminder(true);
-    
+
     try {
       // In a real app, this would be an API call
       // await feesService.sendReminder(selectedStudent.id);
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Update the local state to reflect the change
       const updatedStudents = unpaidStudents.map(student => {
         if (student.id === selectedStudent.id) {
@@ -314,11 +316,11 @@ function Fees() {
         }
         return student;
       });
-      
+
       setUnpaidStudents(updatedStudents);
-      
+
       // Also update the filtered students
-      setFilteredStudents(prevFiltered => 
+      setFilteredStudents(prevFiltered =>
         prevFiltered.map(student => {
           if (student.id === selectedStudent.id) {
             return { ...student, action: "Sent" };
@@ -326,16 +328,16 @@ function Fees() {
           return student;
         })
       );
-      
+
       // Show success message
       setReminderSuccess(true);
-      
+
       // Close modal after a delay
       setTimeout(() => {
         setShowReminderModal(false);
         setSelectedStudent(null);
       }, 2000);
-      
+
     } catch (err) {
       setError("Failed to send reminder. Please try again.");
     } finally {
@@ -366,13 +368,13 @@ function Fees() {
           </div>
           <div className="d-flex align-items-center">
             <img
-              src="/assets/avatar.png"
+              src={userData?.profile_pic || "/assets/avatar.jpeg"}
               alt="User"
               style={{ borderRadius: "50%", width: "54px", height: "54px", marginRight: "10px" }}
             />
             <div style={{ marginRight: "10px" }}>
-              <div style={{ fontWeight: "500", fontSize: "14" }}>Zuhran Ahmad</div>
-              <div style={{ fontSize: "12px", color: "#6c757d" }}>14785200</div>
+              <div style={{ fontWeight: "500", fontSize: "14" }}>{userData?.full_name}</div>
+              <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
             </div>
           </div>
         </header>
@@ -409,8 +411,8 @@ function Fees() {
 
               <Dropdown.Menu>
                 {departments.map((dept, index) => (
-                  <Dropdown.Item 
-                    key={index} 
+                  <Dropdown.Item
+                    key={index}
                     onClick={() => handleDepartmentChange(dept)}
                     active={department === dept}
                   >
@@ -445,13 +447,13 @@ function Fees() {
                   year: "numeric"
                 })}
               </span>
-              
+
               {showDatePicker && (
-                <div 
-                  style={{ 
-                    position: "absolute", 
-                    top: "100%", 
-                    left: 0, 
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
                     zIndex: 1000,
                     backgroundColor: "#fff",
                     boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
@@ -473,17 +475,17 @@ function Fees() {
                     />
                   </Form.Group>
                   <div className="d-flex justify-content-end mt-2">
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
+                    <Button
+                      size="sm"
+                      variant="secondary"
                       onClick={() => setShowDatePicker(false)}
                       className="me-2"
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      size="sm" 
-                      variant="primary" 
+                    <Button
+                      size="sm"
+                      variant="primary"
                       onClick={() => setShowDatePicker(false)}
                     >
                       Apply
@@ -492,7 +494,7 @@ function Fees() {
                 </div>
               )}
             </div>
-            
+
             {/* <Button 
               variant="outline-secondary"
               onClick={refreshData}
@@ -569,7 +571,7 @@ function Fees() {
                         {formatCurrency(feeSummary.collected.totalFees)} <span style={{ fontSize: "14px", fontWeight: "400", color: '#4B5563' }}>Rs</span>
                       </div>
                     </div>
-                    <div style={{borderTop:'1px solid #EAECF0', marginBottom:'10px'}}></div>
+                    <div style={{ borderTop: '1px solid #EAECF0', marginBottom: '10px' }}></div>
 
                     <div className="mb-3">
                       <div style={{ fontSize: "14px", color: "#000", marginBottom: "4px", fontWeight: '500' }}>Fine</div>
@@ -578,7 +580,7 @@ function Fees() {
                         {formatCurrency(feeSummary.collected.totalFine)} <span style={{ fontSize: "14px", fontWeight: "400", color: '#4B5563' }}>Rs</span>
                       </div>
                     </div>
-                    <div style={{borderTop:'1px solid #EAECF0', marginBottom:'10px'}}></div>
+                    <div style={{ borderTop: '1px solid #EAECF0', marginBottom: '10px' }}></div>
 
                     <div className="mb-3 d-flex justify-content-between align-items-center">
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -588,8 +590,8 @@ function Fees() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div style={{display:'flex',justifyContent:'flex-end'}}>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Button
                         onClick={() => navigate("/fees-collected")}
                         style={{
@@ -628,7 +630,7 @@ function Fees() {
                         {formatCurrency(feeSummary.pending.totalFees)} <span style={{ fontSize: "14px", fontWeight: "400", color: '#4B5563' }}>Rs</span>
                       </div>
                     </div>
-                    <div style={{borderTop:'1px solid #EAECF0', marginBottom:'10px'}}></div>
+                    <div style={{ borderTop: '1px solid #EAECF0', marginBottom: '10px' }}></div>
 
                     <div className="mb-3">
                       <div style={{ fontSize: "14px", color: "#000", marginBottom: "4px", fontWeight: '500' }}>Fine</div>
@@ -637,7 +639,7 @@ function Fees() {
                         {formatCurrency(feeSummary.pending.totalFine)} <span style={{ fontSize: "14px", fontWeight: "400", color: '#4B5563' }}>Rs</span>
                       </div>
                     </div>
-                    <div style={{borderTop:'1px solid #EAECF0', marginBottom:'10px'}}></div>
+                    <div style={{ borderTop: '1px solid #EAECF0', marginBottom: '10px' }}></div>
 
                     <div className="mb-3 d-flex justify-content-between align-items-center">
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -647,8 +649,8 @@ function Fees() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div style={{display:'flex',justifyContent:'flex-end'}}>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Button
                         onClick={() => navigate("/fees-pending")}
                         style={{
@@ -701,31 +703,31 @@ function Fees() {
                   </Dropdown.Toggle>
 
                   <Dropdown.Menu>
-                    <Dropdown.Item 
+                    <Dropdown.Item
                       onClick={() => handleSort("default")}
                       active={sortOption === "default"}
                     >
                       Default
                     </Dropdown.Item>
-                    <Dropdown.Item 
+                    <Dropdown.Item
                       onClick={() => handleSort("amount-asc")}
                       active={sortOption === "amount-asc"}
                     >
                       Amount (Low to High)
                     </Dropdown.Item>
-                    <Dropdown.Item 
+                    <Dropdown.Item
                       onClick={() => handleSort("amount-desc")}
                       active={sortOption === "amount-desc"}
                     >
                       Amount (High to Low)
                     </Dropdown.Item>
-                    <Dropdown.Item 
+                    <Dropdown.Item
                       onClick={() => handleSort("date-asc")}
                       active={sortOption === "date-asc"}
                     >
                       Deadline (Oldest First)
                     </Dropdown.Item>
-                    <Dropdown.Item 
+                    <Dropdown.Item
                       onClick={() => handleSort("date-desc")}
                       active={sortOption === "date-desc"}
                     >
@@ -910,8 +912,8 @@ function Fees() {
                 <Button variant="secondary" onClick={() => setShowReminderModal(false)}>
                   Cancel
                 </Button>
-                <Button 
-                  variant="danger" 
+                <Button
+                  variant="danger"
                   onClick={sendReminder}
                   disabled={sendingReminder}
                 >

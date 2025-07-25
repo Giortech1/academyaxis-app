@@ -1,17 +1,19 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { Form, Button, Image } from "react-bootstrap";
 import Calendar from "react-calendar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-calendar/dist/Calendar.css";
 import { UserContext } from "./UserContext";
 
 const TeacherCreateAssignments = () => {
+  const { sectionId } = useParams();
   const { userData, sections, createAssignment } = useContext(UserContext);
-  const [selectedSection, setSelectedSection] = useState(null);
   const navigate = useNavigate();
 
+  const [selectedSection, setSelectedSection] = useState(null);
   const [assignmentTitle, setAssignmentTitle] = useState("");
+  const [assignmentMarks, setAssignmentMarks] = useState("");
   const [description, setDescription] = useState("");
   const [attachmentLink, setAttachmentLink] = useState("");
   const [startDate, setStartDate] = useState(new Date());
@@ -19,13 +21,20 @@ const TeacherCreateAssignments = () => {
   const [selectedTime, setSelectedTime] = useState("09:00 AM");
   const [selectedEndTime, setSelectedEndTime] = useState("11:00 AM");
   const [scheduleAssignment, setScheduleAssignment] = useState(false);
-  const [day, setDay] = useState("Monday");
-  const [month, setMonth] = useState("January");
-  const [time, setTime] = useState("09:00");
-  const [period, setPeriod] = useState("AM");
+  const [scheduleDate, setScheduleDate] = useState(new Date());
+  const [scheduleTime, setScheduleTime] = useState("09:00 AM");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentFormat, setCurrentFormat] = useState("Regular");
+  const textareaRef = useRef(null);
 
-  // Helper function to convert time string to 24-hour format
+  useEffect(() => {
+    if (!sectionId || sections?.length === 0) return;
+
+    const matchedSection = sections.find(section => section?.id === sectionId);
+    setSelectedSection(matchedSection);
+
+  }, [sectionId, sections]);
+
   const convertTo24Hour = (timeStr) => {
     const [time, period] = timeStr.split(' ');
     const [hours, minutes] = time.split(':');
@@ -40,7 +49,6 @@ const TeacherCreateAssignments = () => {
     return `${hour24.toString().padStart(2, '0')}:${minutes}`;
   };
 
-  // Helper function to create ISO date string
   const createISODateTime = (date, timeStr) => {
     const time24 = convertTo24Hour(timeStr);
     const [hours, minutes] = time24.split(':');
@@ -51,43 +59,22 @@ const TeacherCreateAssignments = () => {
     return newDate.toISOString();
   };
 
-  // Helper function to create scheduled date
-  const createScheduledDateTime = (day, month, time, period) => {
-    const currentYear = new Date().getFullYear();
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"];
-    const monthIndex = monthNames.indexOf(month);
-
-    const scheduleDate = new Date(currentYear, monthIndex, 1);
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const targetDay = dayNames.indexOf(day);
-
-    while (scheduleDate.getDay() !== targetDay) {
-      scheduleDate.setDate(scheduleDate.getDate() + 1);
-    }
-
-    const time24 = convertTo24Hour(`${time} ${period}`);
+  const createScheduledDateTime = (date, timeStr) => {
+    const time24 = convertTo24Hour(timeStr);
     const [hours, minutes] = time24.split(':');
 
-    scheduleDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    const scheduleDateTime = new Date(date);
+    scheduleDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-    return scheduleDate.toISOString();
+    return scheduleDateTime.toISOString();
   };
 
-  const handleDayChange = (e) => {
-    setDay(e.target.value);
+  const handleScheduleDateChange = (date) => {
+    setScheduleDate(date);
   };
 
-  const handleMonthChange = (e) => {
-    setMonth(e.target.value);
-  };
-
-  const handleTimeChange = (e) => {
-    setTime(e.target.value);
-  };
-
-  const handlePeriodChange = (e) => {
-    setPeriod(e.target.value);
+  const handleScheduleTimeChange = (e) => {
+    setScheduleTime(e.target.value);
   };
 
   const handleScheduleToggle = (e) => {
@@ -103,18 +90,154 @@ const TeacherCreateAssignments = () => {
     setEndDate(newEndDate);
   };
 
+  const getSelectedText = () => {
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      return {
+        text: description.substring(start, end),
+        start,
+        end,
+      };
+    }
+    return { text: '', start: 0, end: 0 };
+  };
+
+  const insertAtCursor = (before, after = '') => {
+    const { text, start, end } = getSelectedText();
+
+    let newText;
+    let newCursorPos;
+
+    if (text) {
+      newText = description.substring(0, start) + before + text + after + description.substring(end);
+      newCursorPos = start + before.length + text.length + after.length;
+    } else {
+      if (after) {
+        newText = description.substring(0, start) + before + after + description.substring(start);
+        newCursorPos = start + before.length;
+      } else {
+        newText = description.substring(0, start) + before + description.substring(start);
+        newCursorPos = start + before.length;
+      }
+    }
+
+    setDescription(newText);
+
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
   const applyFormatting = (format) => {
-    if (format === "bold") {
-      setDescription((prev) => prev + " **bold**");
-    } else if (format === "italic") {
-      setDescription((prev) => prev + " *italic*");
-    } else if (format === "underline") {
-      setDescription((prev) => prev + " <u>underline</u>");
+    switch (format) {
+      case 'bold':
+        insertAtCursor('**', '**');
+        break;
+      case 'italic':
+        insertAtCursor('*', '*');
+        break;
+      case 'underline':
+        insertAtCursor('<u>', '</u>');
+        break;
+      case 'link':
+        const url = prompt('Enter URL:');
+        if (url) {
+          const { text } = getSelectedText();
+          const linkText = text || 'link text';
+          insertAtCursor(`[${linkText}](${url})`);
+        }
+        break;
+      case 'bullet':
+        const { start: bulletStart } = getSelectedText();
+        const beforeCursor = description.substring(0, bulletStart);
+        const needsNewLine = beforeCursor.length > 0 && !beforeCursor.endsWith('\n');
+        insertAtCursor(needsNewLine ? '\n• ' : '• ');
+        break;
+      case 'number':
+        const { start: numberStart } = getSelectedText();
+        const beforeNumberCursor = description.substring(0, numberStart);
+        const needsNumberNewLine = beforeNumberCursor.length > 0 && !beforeNumberCursor.endsWith('\n');
+        insertAtCursor(needsNumberNewLine ? '\n1. ' : '1. ');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleFormatChange = (e) => {
+    const format = e.target.value;
+    setCurrentFormat(format);
+
+    const { text, start, end } = getSelectedText();
+
+    if (text) {
+      let formattedText;
+      switch (format) {
+        case 'Heading':
+          formattedText = `# ${text}`;
+          break;
+        case 'Subheading':
+          formattedText = `## ${text}`;
+          break;
+        case 'Regular':
+        default:
+          formattedText = text;
+          break;
+      }
+
+      const newDescription = description.substring(0, start) + formattedText + description.substring(end);
+      setDescription(newDescription);
+
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const newCursorPos = start + formattedText.length;
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    } else {
+      switch (format) {
+        case 'Heading':
+          insertAtCursor('# ');
+          break;
+        case 'Subheading':
+          insertAtCursor('## ');
+          break;
+        case 'Regular':
+        default:
+          break;
+      }
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case 'b':
+          e.preventDefault();
+          applyFormatting('bold');
+          break;
+        case 'i':
+          e.preventDefault();
+          applyFormatting('italic');
+          break;
+        case 'u':
+          e.preventDefault();
+          applyFormatting('underline');
+          break;
+        default:
+          break;
+      }
     }
   };
 
   const resetForm = () => {
     setAssignmentTitle("");
+    setAssignmentMarks("");
     setDescription("");
     setAttachmentLink("");
     setStartDate(new Date());
@@ -123,10 +246,9 @@ const TeacherCreateAssignments = () => {
     setSelectedEndTime("11:00 AM");
     setSelectedSection(null);
     setScheduleAssignment(false);
-    setDay("Monday");
-    setMonth("January");
-    setTime("09:00");
-    setPeriod("AM");
+    setScheduleDate(new Date());
+    setScheduleTime("9:00 AM");
+    setCurrentFormat("Regular");
   };
 
   const saveAssignment = async (isDraft = false) => {
@@ -137,6 +259,11 @@ const TeacherCreateAssignments = () => {
 
     if (!assignmentTitle.trim()) {
       toast.error("Please enter an assignment title");
+      return;
+    }
+
+    if (!assignmentMarks.trim()) {
+      toast.error("Please enter an assignment total marks");
       return;
     }
 
@@ -152,11 +279,17 @@ const TeacherCreateAssignments = () => {
       let scheduledDateTime = null;
 
       if (scheduleAssignment) {
-        scheduledDateTime = createScheduledDateTime(day, month, time, period);
+        scheduledDateTime = createScheduledDateTime(scheduleDate, scheduleTime);
+
+        if (new Date(scheduledDateTime) <= new Date()) {
+          toast.error("Schedule time must be in the future");
+          return;
+        }
       }
 
       const assignmentData = {
         title: assignmentTitle,
+        totalMarks: assignmentMarks,
         description: description,
         attachmentLink: attachmentLink || null,
         startDate: startDateTime,
@@ -165,10 +298,8 @@ const TeacherCreateAssignments = () => {
         endTime: selectedEndTime,
         isScheduled: scheduleAssignment,
         scheduleDateTime: scheduledDateTime,
-        scheduleDay: scheduleAssignment ? day : null,
-        scheduleMonth: scheduleAssignment ? month : null,
-        scheduleTime: scheduleAssignment ? time : null,
-        schedulePeriod: scheduleAssignment ? period : null,
+        scheduleDate: scheduleAssignment ? scheduleDate.toISOString() : null,
+        scheduleTime: scheduleAssignment ? scheduleTime : null,
         createdBy: userData?.teacher_id,
         createdByName: userData?.full_name || "Unknown Teacher",
         status: isDraft ? "draft" : "published",
@@ -244,21 +375,13 @@ const TeacherCreateAssignments = () => {
       {/* Section Selection and Action Buttons */}
       <header style={styles.actionHeader}>
         <div style={styles.sectionSelector}>
-          <Form.Select
-            value={selectedSection?.course?.name || ""}
-            onChange={(e) => {
-              const section = sections.find(c => c.course.name === e.target.value);
-              setSelectedSection(section || null);
-            }}
-            style={styles.sectionSelect}
-          >
-            <option value="">Select section</option>
-            {sections?.map((section, index) => (
-              <option key={index} value={section?.course?.name}>
-                {section?.course?.name} (Section {section?.section})
-              </option>
-            ))}
-          </Form.Select>
+          <div style={styles.sectionSelect}>
+            {selectedSection?.course?.name}
+          </div>
+
+          <div style={styles.sectionSelect}>
+            Section {selectedSection?.section}
+          </div>
         </div>
 
         <div style={styles.actionButtons}>
@@ -303,6 +426,20 @@ const TeacherCreateAssignments = () => {
 
       <div style={styles.divider}></div>
 
+      {/* Assignment Marks */}
+      <Form.Group className="mb-3">
+        <Form.Label style={styles.label}>Assignment Total Marks</Form.Label>
+        <Form.Control
+          type="number"
+          value={assignmentMarks}
+          onChange={(e) => setAssignmentMarks(e.target.value)}
+          placeholder="Enter assignment total marks"
+          style={styles.titleInput}
+        />
+      </Form.Group>
+
+      <div style={styles.divider}></div>
+
       {/* Description Section */}
       <Form.Group className="mb-4">
         <Form.Label style={styles.descriptionLabel}>Description</Form.Label>
@@ -312,7 +449,11 @@ const TeacherCreateAssignments = () => {
 
         {/* Formatting Toolbar */}
         <div style={styles.toolbar}>
-          <Form.Select defaultValue="Regular" style={styles.formatSelect}>
+          <Form.Select
+            value={currentFormat}
+            onChange={handleFormatChange}
+            style={styles.formatSelect}
+          >
             <option value="Regular">Regular</option>
             <option value="Heading">Heading</option>
             <option value="Subheading">Subheading</option>
@@ -327,13 +468,13 @@ const TeacherCreateAssignments = () => {
           <Button onClick={() => applyFormatting("underline")} style={styles.formatButton}>
             <img src="/assets/editor.png" alt="Underline" style={styles.formatIcon} />
           </Button>
-          <Button style={styles.formatButton}>
+          <Button onClick={() => applyFormatting("link")} style={styles.formatButton}>
             <img src="/assets/editor2.png" alt="Link" style={styles.formatIcon} />
           </Button>
-          <Button style={styles.formatButton}>
+          <Button onClick={() => applyFormatting("bullet")} style={styles.formatButton}>
             <img src="/assets/editor3.png" alt="Bullet" style={styles.formatIcon} />
           </Button>
-          <Button style={styles.formatButton}>
+          <Button onClick={() => applyFormatting("number")} style={styles.formatButton}>
             <img src="/assets/editor3.png" alt="Number" style={styles.formatIcon} />
           </Button>
         </div>
@@ -341,9 +482,11 @@ const TeacherCreateAssignments = () => {
         {/* Textarea */}
         <Form.Control
           as="textarea"
+          ref={textareaRef}
           rows={5}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Enter assignment description..."
           style={styles.textarea}
         />
@@ -507,60 +650,59 @@ const TeacherCreateAssignments = () => {
         {scheduleAssignment && (
           <div>
             <Form.Label style={styles.scheduleLabel}>
-              Assignment publish time
+              Assignment publish date and time
             </Form.Label>
             <div style={styles.scheduleControls}>
               <Form.Control
-                as="select"
-                value={day}
-                onChange={handleDayChange}
-                style={styles.scheduleSelect}
-              >
-                <option>Monday</option>
-                <option>Tuesday</option>
-                <option>Wednesday</option>
-                <option>Thursday</option>
-                <option>Friday</option>
-                <option>Saturday</option>
-                <option>Sunday</option>
-              </Form.Control>
-
-              <Form.Control
-                as="select"
-                value={month}
-                onChange={handleMonthChange}
-                style={styles.scheduleSelectSmall}
-              >
-                <option>January</option>
-                <option>February</option>
-                <option>March</option>
-                <option>April</option>
-                <option>May</option>
-                <option>June</option>
-                <option>July</option>
-                <option>August</option>
-                <option>September</option>
-                <option>October</option>
-                <option>November</option>
-                <option>December</option>
-              </Form.Control>
-
-              <Form.Control
-                type="time"
-                value={time}
-                onChange={handleTimeChange}
-                style={styles.scheduleTime}
+                type="date"
+                value={scheduleDate.toISOString().split("T")[0]}
+                onChange={(e) => handleScheduleDateChange(new Date(e.target.value))}
+                style={styles.scheduleDateInput}
+                min={new Date().toISOString().split("T")[0]}
               />
 
-              <Form.Control
-                as="select"
-                value={period}
-                onChange={handlePeriodChange}
-                style={styles.schedulePeriod}
-              >
-                <option>AM</option>
-                <option>PM</option>
-              </Form.Control>
+              <div style={styles.timeContainer}>
+                <img src="/assets/clock2.png" alt="Clock Icon" style={styles.clockIcon} />
+                <Form.Control
+                  as="select"
+                  value={scheduleTime}
+                  onChange={handleScheduleTimeChange}
+                  style={styles.scheduleTimeSelect}
+                >
+                  <option value="12:00 AM">12:00 AM</option>
+                  <option value="01:00 AM">01:00 AM</option>
+                  <option value="02:00 AM">02:00 AM</option>
+                  <option value="03:00 AM">03:00 AM</option>
+                  <option value="04:00 AM">04:00 AM</option>
+                  <option value="05:00 AM">05:00 AM</option>
+                  <option value="06:00 AM">06:00 AM</option>
+                  <option value="07:00 AM">07:00 AM</option>
+                  <option value="08:00 AM">08:00 AM</option>
+                  <option value="09:00 AM">09:00 AM</option>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="11:00 AM">11:00 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="01:00 PM">01:00 PM</option>
+                  <option value="02:00 PM">02:00 PM</option>
+                  <option value="03:00 PM">03:00 PM</option>
+                  <option value="04:00 PM">04:00 PM</option>
+                  <option value="05:00 PM">05:00 PM</option>
+                  <option value="06:00 PM">06:00 PM</option>
+                  <option value="07:00 PM">07:00 PM</option>
+                  <option value="08:00 PM">08:00 PM</option>
+                  <option value="09:00 PM">09:00 PM</option>
+                  <option value="10:00 PM">10:00 PM</option>
+                  <option value="11:00 PM">11:00 PM</option>
+                </Form.Control>
+                <img src="/assets/arrow-down.png" alt="Arrow Down" style={styles.arrowIcon} />
+              </div>
+            </div>
+
+            {/* Optional: Show selected schedule info */}
+            <div style={styles.schedulePreview}>
+              <small style={styles.schedulePreviewText}>
+                This assignment will be published on {scheduleDate.toLocaleDateString()} at {scheduleTime}
+              </small>
             </div>
           </div>
         )}
@@ -690,15 +832,16 @@ const styles = {
   },
   sectionSelector: {
     position: "relative",
-    width: "50%"
+    width: "auto",
+    display: "flex",
+    gap: "10px",
   },
   sectionSelect: {
     borderRadius: "12px",
     fontSize: "14px",
-    color: "#475467",
     fontWeight: "400",
     padding: "10px",
-    border: "1px solid #EAECF0",
+    border: "1px solid #D1D5DB",
     appearance: "none"
   },
   actionButtons: {
@@ -771,7 +914,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     padding: "8px",
-    backgroundColor: "#F9FAFB"
+    backgroundColor: "#F9FAFB",
+    gap: "8px"
   },
   formatSelect: {
     border: "1px solid #D1D5DB",
@@ -787,11 +931,17 @@ const styles = {
     fontSize: "14px",
     borderRadius: "4px",
     background: "none",
-    border: "none"
+    border: "1px solid #D1D5DB",
+    padding: "6px 8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: "32px",
+    height: "32px"
   },
   formatIcon: {
-    width: "32px",
-    height: "32px"
+    width: "16px",
+    height: "16px"
   },
   textarea: {
     borderRadius: "8px",
@@ -799,7 +949,10 @@ const styles = {
     fontWeight: "400",
     padding: "10px",
     border: "1px solid #D0D5DD",
-    width: "50%"
+    width: "50%",
+    fontFamily: "inherit",
+    lineHeight: "1.5",
+    resize: "vertical"
   },
   attachmentSection: {
     marginTop: "15px",
@@ -897,41 +1050,35 @@ const styles = {
     gap: "10px",
     alignItems: "center"
   },
-  scheduleSelect: {
+  scheduleDateInput: {
     borderRadius: "8px",
     fontSize: "14px",
     padding: "10px",
     fontWeight: "500",
     color: "#111827",
     border: "1px solid #E5E7EB",
-    width: "150px"
+    width: "200px"
   },
-  scheduleSelectSmall: {
+  scheduleTimeSelect: {
+    border: "1px solid #D0D5DD",
     borderRadius: "8px",
+    padding: "10px 30px 10px 40px",
     fontSize: "14px",
-    padding: "10px",
-    fontWeight: "500",
-    color: "#111827",
-    border: "1px solid #E5E7EB",
-    width: "100px"
+    width: "180px",
+    appearance: "none",
+    background: "none"
   },
-  scheduleTime: {
-    borderRadius: "8px",
-    fontSize: "14px",
-    padding: "10px",
-    fontWeight: "500",
-    color: "#111827",
+  schedulePreview: {
+    marginTop: "10px",
+    padding: "8px",
+    backgroundColor: "#F3F4F6",
+    borderRadius: "6px",
     border: "1px solid #E5E7EB",
-    width: "120px"
   },
-  schedulePeriod: {
-    borderRadius: "8px",
-    fontSize: "14px",
-    padding: "10px",
-    fontWeight: "500",
-    color: "#111827",
-    border: "1px solid #E5E7EB",
-    width: "80px"
+  schedulePreviewText: {
+    color: "#6B7280",
+    fontSize: "12px",
+    fontStyle: "italic",
   }
 };
 

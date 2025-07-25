@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from './UserContext.js';
 import { useLocation } from "react-router-dom";
 
-function StudentsInDemoSection() {
+function SectionDetails() {
   const { userData } = useContext(UserContext);
   const location = useLocation();
   const selectedData = location.state?.selectedData;
@@ -104,7 +104,7 @@ function StudentsInDemoSection() {
           <div id='user-info' style={styles.userInfo}>
             <img
               id='info-img'
-              src="/assets/avatar.jpeg"
+              src={userData?.profile_pic || "/assets/avatar.jpeg"}
               alt="User"
               style={styles.userImage}
             />
@@ -112,7 +112,7 @@ function StudentsInDemoSection() {
               <div style={styles.userName}>
                 {userData?.first_name} {userData?.last_name}
               </div>
-              <div style={styles.userId}>{userData?.user_id}</div>
+              <div style={styles.userId}>{userData?.admin_id}</div>
             </div>
           </div>
         </header>
@@ -458,4 +458,4 @@ const styles = {
   }
 };
 
-export default StudentsInDemoSection;
+export default SectionDetails;

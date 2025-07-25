@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Card, Image, ProgressBar, Table, Button, ListGroup, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Dashboard.css';
 
 
 import { useNavigate } from "react-router-dom";
+import { UserContext } from './UserContext';
 
 const Dashboard = () => {
+    const { userData } = useContext(UserContext);
     const [showFirstContent, setShowFirstContent] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const [courses, setCourses] = useState([]);
@@ -585,7 +587,7 @@ const Dashboard = () => {
                             {/* User Info */}
                             <img
                                 id='info-img'
-                                src="/assets/avatar.jpeg" // Replace with your image path
+                                src={userData?.profile_pic || "/assets/avatar.jpeg"} // Replace with your image path
                                 alt="User"
                                 style={{
                                     borderRadius: '50%',
@@ -596,8 +598,8 @@ const Dashboard = () => {
                                 }}
                             />
                             <div style={{ marginRight: '10px' }}>
-                                <div style={{ fontWeight: '500', fontSize: '14' }}>Mian Hamad Khalil</div>
-                                <div style={{ fontSize: '12px', color: '#6c757d' }}>123456</div>
+                                <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
+                                <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.teacher_id}</div>
                             </div>
                             <button
                                 style={{

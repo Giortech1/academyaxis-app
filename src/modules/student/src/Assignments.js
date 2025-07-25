@@ -5,7 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { UserContext } from "./UserContext";
 
 function Assignments() {
-  const { user, userData, sections } = useContext(UserContext);
+  const { userData, sections } = useContext(UserContext);
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("Upcoming");
   const [tableData, setTableData] = useState([]);
@@ -25,12 +25,20 @@ function Assignments() {
 
           if (teacher) {
             const dueDate = new Date(assignment.endDate);
+            const scheduledDate = new Date(assignment?.scheduleDateTime)
             const isSubmitted = Array.isArray(assignment.submitted) &&
               assignment.submitted.some(sub => sub.studentId === userData?.student_id);
+
+            const submittedData = Array.isArray(assignment.submitted)
+              ? assignment.submitted.find(sub => sub.studentId === userData?.student_id)
+              : null;
 
 
             const isOverdue = !isSubmitted && dueDate < today;
             const isUpcoming = !isSubmitted && dueDate >= today;
+            const isScheduled = assignment?.isScheduled && scheduledDate > today;
+
+            if (isScheduled) return;
 
             const assignmentData = {
               id: assignment.id,
@@ -52,7 +60,9 @@ function Assignments() {
               createdBy: assignment.createdBy,
               createdByName: assignment.createdByName,
               isDraft: assignment.isDraft,
-              isScheduled: assignment.isScheduled
+              isScheduled: assignment.isScheduled,
+              submittedData: submittedData,
+              totalMarks: assignment?.totalMarks,
             };
 
             allAssignments.push(assignmentData);

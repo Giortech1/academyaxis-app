@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Button, Table } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 
 function Quizzes() {
+  const { userData } = useContext(UserContext);
   const [activeFilter, setActiveFilter] = useState("Upcoming");
   const [tableData, setTableData] = useState({});
   const navigate = useNavigate();
@@ -82,13 +84,13 @@ function Quizzes() {
       <header className="d-flex justify-content-end align-items-center p-3 mb-3">
         <div className="d-flex align-items-center">
           <img
-            src="/assets/avatar.jpeg"
+           src={userData?.profile_pic || "/assets/avatar.jpeg"}
             alt="User"
             className="rounded-circle me-2"
             style={{ width: "54px", height: "54px" }}
           />
           <div className="me-2">
-            <div style={{ fontWeight: "500", fontSize: "14px",  }}>Jhon Deo</div>
+            <div style={{ fontWeight: "500", fontSize: "14px",  }}>{userData?.full_name}</div>
             <div style={{ fontSize: "12px", color: "#6c757d",  }}>123456</div>
           </div>
           <button className="bg-transparent border-0">

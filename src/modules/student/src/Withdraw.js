@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Container, Table, Button, Image } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { UserContext } from "./UserContext";
 
 
 function WithdrawPage() {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
     const location = useLocation();
   
@@ -61,7 +63,7 @@ function WithdrawPage() {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <img
                             id="info-img"
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             style={{
                                 borderRadius: '50%',
@@ -71,8 +73,8 @@ function WithdrawPage() {
                             }}
                         />
                         <div style={{ marginRight: '10px' }}>
-                            <div style={{ fontWeight: '500', fontSize: '14px' }}>Jhon Deo</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>123456</div>
+                            <div style={{ fontWeight: '500', fontSize: '14px' }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.student_id}</div>
                         </div>
                     </div>
                 </header>

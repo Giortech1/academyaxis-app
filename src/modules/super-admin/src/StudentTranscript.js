@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Image, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom"; // <-- Import useNavigate
+import { UserContext } from './UserContext';
 
 const StudentTranscript = () => {
-  // Initialize useNavigate hook
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate(); // <-- Use the navigate hook
 
   // Dynamic Data Example (You can replace this with fetched data)
@@ -138,7 +139,7 @@ const StudentTranscript = () => {
         <div className="d-flex align-items-center">
           <Image
             id="info-img"
-            src="/assets/avatar.jpeg"
+            src={userData?.profile_pic || "/assets/avatar.jpeg"}
             roundedCircle
             width={54}
             height={54}
@@ -146,8 +147,8 @@ const StudentTranscript = () => {
             alt="User Avatar"
           />
           <div className="me-2">
-            <div style={{ fontWeight: "500", fontSize: "14px" }}>John Deo</div>
-            <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+            <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
           </div>
           <Button variant="link" className="p-0">
             <Image

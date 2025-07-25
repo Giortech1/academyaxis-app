@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Container, Row, Col, Form, Image, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 function StudentProfile() {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
 
@@ -76,7 +78,7 @@ function StudentProfile() {
                 <div className="d-flex align-items-center" id="exam-avatar">
                     <Image
                         id="info-img"
-                        src="/assets/avatar.jpeg" // Replace with profile avatar image
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"} // Replace with profile avatar image
                         alt="Profile"
                         roundedCircle
                         width={54}
@@ -85,9 +87,9 @@ function StudentProfile() {
                     />
                     <div>
                         <div style={{ fontSize: "14px", fontWeight: "500", color: '#1F2937' }}>
-                            Amir Mehmood
+                            {userData?.full_name}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#9CA3AF", fontWeight: '400' }}>14783200</div>
+                        <div style={{ fontSize: "12px", color: "#9CA3AF", fontWeight: '400' }}>{userData?.admin_id}</div>
                     </div>
                 </div>
             </header>
