@@ -4,30 +4,16 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from './UserContext.js';
 
-
-function Attendence() {
-    const { userData, getAllSectionsWithStudents } = useContext(UserContext);
-    const [sections, setSections] = useState([]);
+function Sections() {
+    const { userData, sections } = useContext(UserContext);
     const [searchText, setSearchText] = useState("");
     const [yearOptions] = useState(["2022–2024", "2023–2025", "2024–2026", "2025–2027"]);
     const [selectedYear, setSelectedYear] = useState("2024–2026");
     const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
-
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const getSections = async () => {
-            const response = await getAllSectionsWithStudents();
-            if (response?.success) {
-                setSections(response?.data);
-            }
-        };
-
-        getSections();
-    }, []);
-
     const handleCardClick = (data) => {
-        navigate("/Allstudents", { state: { selectedData: data } });
+        navigate("/SectionDetails", { state: { selectedData: data } });
     };
 
     const toggleYearDropdown = () => {
@@ -39,7 +25,7 @@ function Attendence() {
         setYearDropdownOpen(false);
     };
 
-    const filteredData = sections.filter((data) => data.batch === selectedYear || data.section.toLowerCase().includes(searchText.toLowerCase()));
+    const filteredData = sections?.filter((data) => data.batch === selectedYear || data.section.toLowerCase().includes(searchText.toLowerCase()));
 
     return (
         <Container fluid className="p-0 d-flex">
@@ -53,7 +39,7 @@ function Attendence() {
                         {/* User Info */}
                         <img
                             id='info-img'
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             style={{
                                 borderRadius: '50%',
@@ -65,7 +51,7 @@ function Attendence() {
                         />
                         <div style={{ marginRight: '10px' }}>
                             <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.first_name} {userData?.last_name}</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.user_id}</div>
+                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.admin_id}</div>
                         </div>
 
                     </div>
@@ -218,14 +204,27 @@ function Attendence() {
                                                 +{data?.students?.length} New Admission
                                             </p>
                                             <div className="d-flex align-items-center">
-                                                <Image src="/assets/Avatar3.png" roundedCircle width={30} height={30} className="me-1" />
-                                                <Image src="/assets/Avatar4.png" id="avt" roundedCircle width={30} height={30} className="me-1" />
-                                                <Image src="/assets/Avatar5.png" id="avt" roundedCircle width={30} height={30} className="me-1" />
-                                                <span className="total-count">{data?.students.length - 3 > 0 ? `+${data?.students.length - 3}` : ''}</span>
+                                                {data?.students?.slice(0, 3).map((student, index) => (
+                                                    <Image
+                                                        key={student?.id || index}
+                                                        src={student?.profile_pic}
+                                                        roundedCircle
+                                                        width={30}
+                                                        height={30}
+                                                        className="me-1"
+                                                        id={index !== 0 ? "avt" : ""}
+                                                    />
+                                                ))}
+
+                                                {data?.students?.length > 3 && (
+                                                    <span className="total-count">
+                                                        +{data?.students?.length - 3}
+                                                    </span>
+                                                )}
                                             </div>
                                             <p className="mt-4 d-flex align-items-center" id="data-batch" style={{ fontSize: '12px', fontWeight: '400', color: '#1F2937', marginTop: '15px' }}>
                                                 <Image src="/assets/batch.png" width={14} height={14} className="me-1" alt="Batch" />
-                                                 Section {data?.section}
+                                                Section {data?.section}
                                             </p>
                                         </Card.Body>
 
@@ -256,4 +255,4 @@ function Attendence() {
     );
 }
 
-export default Attendence;
+export default Sections;

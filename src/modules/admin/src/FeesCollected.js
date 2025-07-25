@@ -299,7 +299,7 @@ function FeesCollected() {
                         {/* User Info */}
                         <img
                             id='info-img'
-                            src="/assets/avatar.jpeg" // Replace with your image path
+                           src={userData?.profile_pic || "/assets/avatar.jpeg"} // Replace with your image path
                             alt="User"
                             style={{
                                 borderRadius: '50%',
@@ -311,7 +311,7 @@ function FeesCollected() {
                         />
                         <div style={{ marginRight: '10px' }}>
                             <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.first_name} {userData?.last_name}</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.user_id}</div>
+                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.admin_id}</div>
                         </div>
 
                     </div>

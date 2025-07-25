@@ -4,7 +4,7 @@ import { UserContext } from "./UserContext";
 import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-const TeacherCreateSection = () => {
+const CreateSection = () => {
     const { adminData, deptsData, fetchUsersByRole, createSection } = useContext(UserContext);
     const [programOptions, setProgramOptions] = useState([]);
     const [courseOptions, setCourseOptions] = useState([]);
@@ -125,6 +125,8 @@ const TeacherCreateSection = () => {
             return toast.error("Please enter the room no");
         } else if (!section) {
             return toast.error("Please enter the section");
+        }else if (!studentStrength) {
+            return toast.error("Please enter the student strength");
         } else if (selectedStudents?.length === 0) {
             return toast.error("Please select at least one student");
         } else if (selectedTeachers?.length === 0) {
@@ -172,7 +174,9 @@ const TeacherCreateSection = () => {
                     start_time: startTime,
                     end_time: endTime
                 },
+                maxStrength: studentStrength,
                 createdAt: new Date().toISOString(),
+                status: 'in-progress'
             }, selectedStudents);
 
             if (response?.success) {
@@ -959,4 +963,4 @@ const styles = {
     }
 };
 
-export default TeacherCreateSection;
+export default CreateSection;

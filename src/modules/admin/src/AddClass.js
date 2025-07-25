@@ -5,22 +5,22 @@ import { UserContext } from './UserContext.js';
 
 
 const CalendarGridScreen = () => {
-            const { userData } = useContext(UserContext);
+    const { userData } = useContext(UserContext);
 
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
     const [events, setEvents] = useState([]);
-    
+
     // Month names for date display
     const monthNames = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     ];
-    
+
     // Get the current date
     const today = new Date();
-    
+
     // Initialize startOfWeek
     const [startOfWeek, setStartOfWeek] = useState(() => {
         const day = new Date(today);
@@ -28,10 +28,10 @@ const CalendarGridScreen = () => {
         day.setDate(day.getDate() - dayIndex);
         return day;
     });
-    
+
     // Generate week dates based on startOfWeek
     const [weekDates, setWeekDates] = useState([]);
-    
+
     useEffect(() => {
         // Update week dates whenever startOfWeek changes
         const newWeekDates = Array.from({ length: 7 }, (_, i) => {
@@ -41,7 +41,7 @@ const CalendarGridScreen = () => {
         });
         setWeekDates(newWeekDates);
     }, [startOfWeek]);
-    
+
     // Initialize form data
     const [formData, setFormData] = useState({
         day: '',
@@ -52,14 +52,14 @@ const CalendarGridScreen = () => {
         room: '',
         color: ''
     });
-    
+
     // Available hours
     const hours = Array.from({ length: 24 }, (_, i) => {
         const hour = i % 12 || 12;
         const period = i < 12 ? "am" : "pm";
         return `${hour}:00 ${period}`;
     });
-    
+
     // Available teachers
     const teachers = [
         { id: 1, name: "Kevin Jone" },
@@ -67,7 +67,7 @@ const CalendarGridScreen = () => {
         { id: 3, name: "John Doe" },
         { id: 4, name: "Sarah Brown" }
     ];
-    
+
     // Available rooms
     const rooms = [
         { id: 1, name: "Room no.1" },
@@ -76,7 +76,7 @@ const CalendarGridScreen = () => {
         { id: 4, name: "Room no.5" },
         { id: 5, name: "Room no.8" }
     ];
-    
+
     // Event colors
     const eventColors = [
         { id: 1, value: "#E9E8FC", name: "Purple" },
@@ -85,7 +85,7 @@ const CalendarGridScreen = () => {
         { id: 4, value: "#DFF8E1", name: "Light Green" },
         { id: 5, value: "#F0F0FF", name: "Blue" }
     ];
-    
+
     // Initialize default events
     useEffect(() => {
         // Default events data
@@ -131,7 +131,7 @@ const CalendarGridScreen = () => {
                 color: "#DFF8E1",
             }
         ];
-        
+
         // Assign different days to each event
         const updatedEvents = defaultEvents.map((event, index) => {
             const eventDate = new Date(event.date);
@@ -141,30 +141,30 @@ const CalendarGridScreen = () => {
                 date: eventDate
             };
         });
-        
+
         setEvents(updatedEvents);
     }, []);
-    
+
     // Handle form input changes
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
-    
+
     // Handle form submission
     const handleSubmit = () => {
         // Validate form data
-        if (!formData.day || !formData.course || !formData.teacher || 
+        if (!formData.day || !formData.course || !formData.teacher ||
             !formData.startTime || !formData.endTime || !formData.room) {
             alert("Please fill in all required fields");
             return;
         }
-        
+
         // Create new event
         const selectedDay = parseInt(formData.day);
         const eventDate = new Date(startOfWeek);
         eventDate.setDate(startOfWeek.getDate() + selectedDay);
-        
+
         const newEvent = {
             id: events.length + 1,
             date: eventDate,
@@ -175,10 +175,10 @@ const CalendarGridScreen = () => {
             teacher: formData.teacher,
             color: formData.color || eventColors[Math.floor(Math.random() * eventColors.length)].value
         };
-        
+
         // Add new event to events array
         setEvents(prevEvents => [...prevEvents, newEvent]);
-        
+
         // Reset form and close modal
         setFormData({
             day: '',
@@ -191,7 +191,7 @@ const CalendarGridScreen = () => {
         });
         setShowModal(false);
     };
-    
+
     // Handle week navigation
     const navigateWeek = (direction) => {
         setStartOfWeek(prevDate => {
@@ -200,19 +200,19 @@ const CalendarGridScreen = () => {
             return newDate;
         });
     };
-    
+
     // Delete an event
     const deleteEvent = (eventId) => {
         setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
     };
-    
+
     // Helper to format month year string
     const getMonthYearString = () => {
         const month = monthNames[startOfWeek.getMonth()];
         const year = startOfWeek.getFullYear();
         return `${month} ${year}`;
     };
-    
+
     // Render events in calendar cells
     const renderEvent = (currentDate, time) => {
         return events.map((event) => {
@@ -379,25 +379,25 @@ const CalendarGridScreen = () => {
                 </div>
 
                 <div id='user-info' style={{ display: 'flex', alignItems: 'center' }}>
-                        {/* User Info */}
-                        <img
-                            id='info-img'
-                            src="/assets/avatar.jpeg" // Replace with your image path
-                            alt="User"
-                            style={{
-                                borderRadius: '50%',
-                                width: '54px',
-                                height: '54px',
-                                marginRight: '10px',
+                    {/* User Info */}
+                    <img
+                        id='info-img'
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
+                        alt="User"
+                        style={{
+                            borderRadius: '50%',
+                            width: '54px',
+                            height: '54px',
+                            marginRight: '10px',
 
-                            }}
-                        />
-                        <div style={{ marginRight: '10px' }}>
-                            <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.first_name} {userData?.last_name}</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.user_id}</div>
-                        </div>
-
+                        }}
+                    />
+                    <div style={{ marginRight: '10px' }}>
+                        <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.first_name} {userData?.last_name}</div>
+                        <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.admin_id}</div>
                     </div>
+
+                </div>
             </header>
 
             {/* Second Header Section */}
@@ -460,187 +460,187 @@ const CalendarGridScreen = () => {
                         </button>
 
                         {showModal && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        height: '100%',
-                        width: '100%',
-                        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        zIndex: 1000,
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: '16px',
-                            padding: '15px',
-                            width: '320px',
-                            boxShadow: '0px 5px 15px rgba(0,0,0,0.2)',
-                            position: 'relative',
-                        }}
-                    >
-                        {/* Modal Header */}
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                            <h5 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Add class</h5>
-                            <button
-                                onClick={() => setShowModal(false)}
+                            <div
                                 style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    fontSize: '24px',
-                                    cursor: 'pointer',
+                                    position: 'fixed',
+                                    top: 0,
+                                    left: 0,
+                                    height: '100%',
+                                    width: '100%',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    zIndex: 1000,
                                 }}
                             >
-                                &times;
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <form>
-                            <div className="mb-3">
-                                <label style={{ fontSize: '14px', fontWeight: '500' }}>Day</label>
-                                <select
-                                    name="day"
-                                    className="form-control"
-                                    value={formData.day}
-                                    onChange={handleChange}
+                                <div
+                                    style={{
+                                        backgroundColor: 'white',
+                                        borderRadius: '16px',
+                                        padding: '15px',
+                                        width: '320px',
+                                        boxShadow: '0px 5px 15px rgba(0,0,0,0.2)',
+                                        position: 'relative',
+                                    }}
                                 >
-                                    <option value="">Select Day</option>
-                                    {weekDates.map((date, index) => (
-                                        <option key={index} value={index}>
-                                            {days[index]} ({date.getDate()}/{date.getMonth() + 1})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="mb-3">
-                                <label style={{ fontSize: '14px', fontWeight: '500' }}>Course</label>
-                                <input
-                                    name="course"
-                                    className="form-control"
-                                    placeholder="Data Structure"
-                                    value={formData.course}
-                                    onChange={handleChange}
-                                    style={{ fontSize: '14px', fontWeight: '500' }}
-                                />
-                            </div>
-
-                            <div className="mb-3">
-                                <label style={{ fontSize: '14px', fontWeight: '500' }}>Room</label>
-                                <select
-                                    name="room"
-                                    className="form-control"
-                                    value={formData.room}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Select Room</option>
-                                    {rooms.map(room => (
-                                        <option key={room.id} value={room.name}>
-                                            {room.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="mb-3">
-                                <label style={{ fontSize: '14px', fontWeight: '500' }}>Teacher</label>
-                                <select
-                                    name="teacher"
-                                    className="form-control"
-                                    value={formData.teacher}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Select Teacher</option>
-                                    {teachers.map(teacher => (
-                                        <option key={teacher.id} value={teacher.name}>
-                                            {teacher.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="mb-3 d-flex justify-content-between">
-                                <div style={{ width: '48%' }}>
-                                    <label style={{ fontSize: '14px', fontWeight: '500' }}>Start time</label>
-                                    <select
-                                        name="startTime"
-                                        className="form-control"
-                                        value={formData.startTime}
-                                        onChange={handleChange}
-                                    >
-                                        <option value="">Select</option>
-                                        {hours.filter((_, i) => i < 22).map((hour, index) => (
-                                            <option key={index} value={hour}>
-                                                {hour}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div style={{ width: '48%' }}>
-                                    <label style={{ fontSize: '14px', fontWeight: '500' }}>End time</label>
-                                    <select
-                                        name="endTime"
-                                        className="form-control"
-                                        value={formData.endTime}
-                                        onChange={handleChange}
-                                    >
-                                        <option value="">Select</option>
-                                        {hours.filter((_, i) => i > hours.indexOf(formData.startTime) || !formData.startTime).map((hour, index) => (
-                                            <option key={index} value={hour}>
-                                                {hour}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="mb-3">
-                                <label style={{ fontSize: '14px', fontWeight: '500' }}>Event Color</label>
-                                <div className="d-flex justify-content-between">
-                                    {eventColors.map(color => (
-                                        <div 
-                                            key={color.id}
+                                    {/* Modal Header */}
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Add class</h5>
+                                        <button
+                                            onClick={() => setShowModal(false)}
                                             style={{
-                                                width: '30px',
-                                                height: '30px',
-                                                backgroundColor: color.value,
-                                                borderRadius: '50%',
+                                                background: 'none',
+                                                border: 'none',
+                                                fontSize: '24px',
                                                 cursor: 'pointer',
-                                                border: formData.color === color.value ? '2px solid #7F56D9' : '1px solid #ddd'
                                             }}
-                                            onClick={() => setFormData(prev => ({ ...prev, color: color.value }))}
-                                            title={color.name}
-                                        />
-                                    ))}
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+
+                                    {/* Modal Body */}
+                                    <form>
+                                        <div className="mb-3">
+                                            <label style={{ fontSize: '14px', fontWeight: '500' }}>Day</label>
+                                            <select
+                                                name="day"
+                                                className="form-control"
+                                                value={formData.day}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="">Select Day</option>
+                                                {weekDates.map((date, index) => (
+                                                    <option key={index} value={index}>
+                                                        {days[index]} ({date.getDate()}/{date.getMonth() + 1})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label style={{ fontSize: '14px', fontWeight: '500' }}>Course</label>
+                                            <input
+                                                name="course"
+                                                className="form-control"
+                                                placeholder="Data Structure"
+                                                value={formData.course}
+                                                onChange={handleChange}
+                                                style={{ fontSize: '14px', fontWeight: '500' }}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label style={{ fontSize: '14px', fontWeight: '500' }}>Room</label>
+                                            <select
+                                                name="room"
+                                                className="form-control"
+                                                value={formData.room}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="">Select Room</option>
+                                                {rooms.map(room => (
+                                                    <option key={room.id} value={room.name}>
+                                                        {room.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label style={{ fontSize: '14px', fontWeight: '500' }}>Teacher</label>
+                                            <select
+                                                name="teacher"
+                                                className="form-control"
+                                                value={formData.teacher}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="">Select Teacher</option>
+                                                {teachers.map(teacher => (
+                                                    <option key={teacher.id} value={teacher.name}>
+                                                        {teacher.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3 d-flex justify-content-between">
+                                            <div style={{ width: '48%' }}>
+                                                <label style={{ fontSize: '14px', fontWeight: '500' }}>Start time</label>
+                                                <select
+                                                    name="startTime"
+                                                    className="form-control"
+                                                    value={formData.startTime}
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value="">Select</option>
+                                                    {hours.filter((_, i) => i < 22).map((hour, index) => (
+                                                        <option key={index} value={hour}>
+                                                            {hour}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div style={{ width: '48%' }}>
+                                                <label style={{ fontSize: '14px', fontWeight: '500' }}>End time</label>
+                                                <select
+                                                    name="endTime"
+                                                    className="form-control"
+                                                    value={formData.endTime}
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value="">Select</option>
+                                                    {hours.filter((_, i) => i > hours.indexOf(formData.startTime) || !formData.startTime).map((hour, index) => (
+                                                        <option key={index} value={hour}>
+                                                            {hour}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label style={{ fontSize: '14px', fontWeight: '500' }}>Event Color</label>
+                                            <div className="d-flex justify-content-between">
+                                                {eventColors.map(color => (
+                                                    <div
+                                                        key={color.id}
+                                                        style={{
+                                                            width: '30px',
+                                                            height: '30px',
+                                                            backgroundColor: color.value,
+                                                            borderRadius: '50%',
+                                                            cursor: 'pointer',
+                                                            border: formData.color === color.value ? '2px solid #7F56D9' : '1px solid #ddd'
+                                                        }}
+                                                        onClick={() => setFormData(prev => ({ ...prev, color: color.value }))}
+                                                        title={color.name}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Save Button */}
+                                        <button
+                                            type="button"
+                                            className="btn w-100"
+                                            style={{
+                                                backgroundColor: '#F9F5FF',
+                                                color: '#7F56D9',
+                                                borderRadius: '10px',
+                                                fontWeight: '500',
+                                                fontSize: '18px',
+                                                border: '1px solid #7F56D9',
+                                            }}
+                                            onClick={handleSubmit}
+                                        >
+                                            Save
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
-
-                            {/* Save Button */}
-                            <button
-                                type="button"
-                                className="btn w-100"
-                                style={{
-                                    backgroundColor: '#F9F5FF',
-                                    color: '#7F56D9',
-                                    borderRadius: '10px',
-                                    fontWeight: '500',
-                                    fontSize: '18px',
-                                    border: '1px solid #7F56D9',
-                                }}
-                                onClick={handleSubmit}
-                            >
-                                Save
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            )}
+                        )}
                     </div>
                 </div>
             </header>
@@ -677,7 +677,7 @@ const CalendarGridScreen = () => {
                                 />
                             </Button>
                         </div>
-                        
+
                         {/* Today button */}
                         <Button
                             variant="outline-primary"
@@ -734,8 +734,8 @@ const CalendarGridScreen = () => {
                             <React.Fragment key={index}>
                                 <div className="time-cell">{hour}</div>
                                 {weekDates.map((date, dateIndex) => (
-                                    <div 
-                                        key={`${dateIndex}-${hour}`} 
+                                    <div
+                                        key={`${dateIndex}-${hour}`}
                                         className="grid-cell"
                                         onClick={() => {
                                             // Quick add event on cell click
