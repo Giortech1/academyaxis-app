@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css"; // Default styles for React Calendar
 import { Container, Row, Col, Card, Form, Button, Image, Dropdown } from "react-bootstrap";
 import 'react-calendar/dist/Calendar.css';
 import { useNavigate } from "react-router-dom";
 import './Dashboard.css';
+import { UserContext } from "./UserContext";
 
 const CalendarScreen = () => {
+    const {userData}=useContext(UserContext);
     const [selectedClassId, setSelectedClassId] = useState(null); // Track selected class
     const navigate = useNavigate(); // Initialize navigate
 
@@ -151,15 +153,15 @@ const CalendarScreen = () => {
 
                 <div className="d-flex align-items-center">
                     <img
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="User"
                         className="rounded-circle me-2"
                         style={{ width: "54px", height: "54px" }}
                         id="info-img"
                     />
                     <div className="me-0">
-                        <div style={{ fontWeight: "500", fontSize: "14px" }}>Mian Hamad Khalil</div>
-                        <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                        <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+                        <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
                     </div>
                     {/* <button className="bg-transparent border-0">
                         <img
