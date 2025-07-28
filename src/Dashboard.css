@@ -1,0 +1,548 @@
+
+    @media (max-width: 767px) {
+      /* Your styles for mobile view go here */
+      #section1 h1{
+        font-size: 18px !important;
+        font-weight: 500 !important;
+      }
+      #section1 p{
+        font-size: 13px !important;
+      }
+      #info-img{
+        width: 40px !important;
+        height: 40px !important;
+      }
+      #header{
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 14px;
+        padding: 12px;
+      }
+      #dashboardheader{
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 14px;
+        /* padding: 12px; */
+      }
+      #result-card{
+        gap: 20px !important;
+      }
+      #my-course{
+        padding: 0px !important;
+      }
+      #course-heading{
+        padding: 10px !important;
+        margin-bottom: 0px !important;
+      }
+      #second-header{
+        flex-direction: column !important;
+        gap: 15px;
+        align-items: flex-start !important;
+      }
+      #mon-year{
+        justify-content: space-around;
+      }
+      #search-container{
+        width: auto !important;
+      }
+      #calendar{
+        margin-bottom: 15px;
+      }
+      #calendarscreen{
+        padding: 14px !important;
+      }
+      #assignments{
+        width: 100%;
+        padding: 10px !important;
+      }
+      #assign-table{
+        height: auto !important;
+      }
+      #quizes-page{
+        width: 100%;
+        padding: 10px !important;
+      }
+      #feechallan{
+        padding:12px !important;
+        
+      }
+      #srno{
+        padding-left: 10px !important;
+      }
+      .table>:not(caption)>*>* {
+        padding: 0px !important;
+        /* color: var(--bs-table-color-state, var(--bs-table-color-type, var(--bs-table-color))); */
+        /* background-color: var(--bs-table-bg); */
+        /* border-bottom-width: var(--bs-border-width); */
+        /* box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state, var(--bs-table-bg-type, var(--bs-table-accent-bg))); */
+    }
+    #info-section{
+        width: 100%;
+    }
+    #feechallandetail{
+        width: 100%;
+    }
+    #feeheading{
+        font-size: 18px !important;
+        font-weight: 500 !important;
+    }
+    #feeimg{
+        width: 40px !important;
+        height: 40px !important;
+    }
+    #feeheader{
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    #feesearch{
+        flex-direction: row-reverse !important;
+        width: 100%;
+    }
+    #name{
+        width: 100%;
+    }
+    #nameinput{
+        width: 80% !important;
+    }
+    #labeldesc{
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100%;
+    }
+    #yourphoto{
+        align-items: flex-start;
+        width: 100%;
+    }
+    #your-bio{
+        width: 100%;
+        flex-direction: column;
+    }
+    #textarea{
+        width: 100% !important;
+    }
+    #contact-email{
+        width: 100% !important;
+     
+    }
+    #form-text{
+        flex-direction: column !important;
+        display: flex;
+    }
+    #calendarsort{
+        width: 100% !important;;
+    }
+    #input-group{
+        width: 100% !important;
+    }
+    #language{
+        width: 100% !important;
+    }
+    #black-theme{
+        width: 100% !important;
+    }
+    #date-format{
+        width: 100% !important;
+    }
+    #settings-heading h2{
+        font-size: 20px !important;
+    }
+    #search-container1{
+        width: 200px !important;
+    }
+    #user-info{
+        width: 100% !important;
+        align-items: flex-end !important;
+        display: flex;
+        justify-content: flex-end;
+    }
+    #news-header{
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 15px;
+    }
+    #news-heading{
+        font-size: 20px !important;
+    }
+    #arrow-left{
+        width: 20px !important;
+        height: 20px !important;
+    }
+    #avatar-img{
+        width: 40px !important;
+        height: 40px !important;
+    }
+   #course-avatars{
+    padding: 5px !important;
+    margin-right: 2px !important;
+   }
+   #mycoursescreen{
+    width: 100% !important;
+   }
+   #mycourse-search{
+    width: 200px !important;
+   
+   
+   }
+   #feechallan h1{
+    font-size: 18px !important;
+    font-weight: 500;
+   }
+   #mycourse h1{
+    font-size: 18px !important;
+    font-weight: 500;
+   }
+   #coursedetailsearch{
+    width:100%;
+   }
+   #coursedetailheader{
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start !important;
+   }
+   #assigntime-left{
+    height: 100% !important;
+   }
+   #coursedetailscreen{
+    width: 100%;
+   }
+   #calenderheading h1{
+    font-size: 18px !important;
+    font-weight: 500 !important;
+   }
+   #mycoursecal{
+    width: 155px;
+   }
+   #assignheading h1{
+    font-size: 18px !important; font-weight: 500;
+   }
+   #mycourse-header{
+    flex-direction: column;
+   }
+   #mycourseform{
+    margin-right: 0px !important;
+   }
+   #examsheading h1{
+    font-size: 18px !important;
+    font-weight: 500 !important;
+   }
+
+   #search-sort{
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 15px;
+    align-items: flex-end;
+    margin-top: 15px;
+   }
+   
+   #assigndetailpage{
+    width: 100% !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+   }
+   #fileupload{
+    width: 100% !important;
+   }
+   #submitsection{
+    margin-top: 14px !important;
+    margin-bottom: 14px !important;
+   }
+   #gradesheader{
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 15px;
+   }
+   #gradesearch{
+    width: 100%;
+   }
+   #gradeformsearch{
+    width: auto !important;
+   }
+   #gradescontainer{
+    padding: 12px !important;
+   }
+   #gradesheading h1{
+    font-size: 18px !important;
+    font-weight: 500 !important;
+   }
+   #graderow{
+    gap: 20px;
+   }
+   #subgradeheading h1{
+    font-size: 18px !important;
+    font-weight: 500;
+   }
+   #subgrade{
+    padding:10px !important;
+   }
+   #chat-input{
+    margin-bottom: 15px !important;
+    padding: 8px !important;
+    width: 95% !important;
+   }
+   div {
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  /* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+  div::-webkit-scrollbar {
+    display: none;
+  }
+  #paywithcard{
+    width: 100%;
+  }
+  #examsyllabus h4{
+    font-size:18px !important;
+    font-weight: 500 !important;
+  }
+   #exsyllabus{
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+   
+   }
+   #examsyllabus{
+    align-items: flex-start !important;
+   width: 100%;
+   
+   }
+   #syllabusheader{
+    flex-direction: column;
+    width: 100%;
+    gap: 15px;
+   }
+   #exam-avatar{
+    justify-content: flex-end;
+    width: 100%;
+   }
+      
+      
+    }
+    #responsive{
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    @media (min-width: 700px) and (max-width: 900px) {
+        /* Your custom styles for screen widths between 700px and 900px go here */
+        #exams-section1{
+            width: 100% !important;
+            flex-direction: column;
+        }
+        #exam-calendar{
+            flex-direction: row !important;
+            display: flex;
+            justify-content: space-evenly;
+            padding: 16px !important;
+            
+        }
+        #time-left{
+            margin: 0px !important;
+        }
+       
+        
+      }
+
+      @media (min-width: 300px) and (max-width: 700px) {
+        /* Your custom styles for screen widths between 700px and 900px go here */
+        #exams-section1{
+            width: 100% !important;
+            flex-direction: column;
+        }
+        #exam-calendar{
+            flex-direction: column !important;
+            display: flex;
+            justify-content: space-evenly;
+            padding: 16px !important;
+            gap: 15px;
+            
+        }
+        #time-left{
+            margin: 0px !important;
+        }
+        #calendar {
+            width: 100% !important;
+        }
+      }
+
+      @media (max-width: 549px) {
+        /* Your custom styles for very small screens go here */
+        #remaining-cards{
+            flex-direction: column !important;
+            padding-top: 10px !important;
+        }
+        #calendar{
+            width: 100% !important;
+        }
+        #exam-calendar {
+          
+            padding: 0px !important;
+            padding-top: 10px !important;
+            gap: 0px !important;
+        }
+        #labels{
+            width: 85% !important;
+        }
+        #syllabus-cards{
+            flex-direction: column !important;
+            padding: 20px;
+        }
+        #syllabus-data{
+            width: 100% !important;
+            margin-bottom: 15px;
+        }
+      }
+      @media (max-width: 400px) {
+        #small-cards{
+            flex-direction: column !important;
+        }
+        #smallcarddata{
+            width: 100% !important;
+        }
+        #examcardheading{
+            width: 100% !important;
+        }
+       
+      }
+      
+    @media screen and (min-width: 900px) and (max-width: 1150px) {
+        #result-card {
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+        }
+        #assignmentsdetail-screen{
+            padding-right: 5px !important;
+           }
+           
+    
+        #result-card .col-md-3,
+        #result-card .col-md-6 {
+            flex: 0 0 48%;
+            max-width: 48%;
+        }
+        #assigndeatil-time{
+            padding-left:5px !important
+        }
+    
+        #result-card .card {
+            min-width: auto !important;
+            width: 100%;
+        }
+    
+        .calendar-header h5 {
+            font-size: 18px;
+        }
+    
+        .calendar-grid-wrapper {
+            max-height: 300px;
+        }
+    
+        .time-cell {
+            font-size: 16px;
+        }
+    
+        .day-text {
+            font-size: 14px;
+        }
+    
+        .calendar-grid {
+            grid-template-columns: 100px repeat(4, 1fr);
+        }
+    
+        .date-number {
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+        }
+    
+        .day-text {
+            font-size: 13px;
+        }
+    
+        .calendar-grid-wrapper {
+            font-size: 14px;
+        }
+    }
+    /* CSS for responsiveness from 768px to 1000px */
+@media (min-width: 768px) and (max-width: 1000px) {
+    .header-section {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .header-left, .header-right {
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+  
+    .calendar-btn, .timetable-btn, .sort-btn {
+      width: 100%;
+      text-align: center;
+      padding: 8px;
+    }
+  
+    .search-container {
+      width: auto !important;
+    }
+  
+    .search-input {
+      width: 100%;
+      text-align: center;
+    }
+
+
+    .border.rounded.p-3 {
+        height: auto;
+        padding: 1rem;
+      }
+    
+      
+    
+      .d-flex.gap-2 {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    
+      .table-responsive {
+        overflow-x: auto;
+      }
+    
+      table {
+        font-size: 14px;
+      }
+    
+      th,
+      td {
+        padding: 10px;
+        white-space: nowrap;
+      }
+    
+      .custom-view-button {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+      }
+    
+     
+    
+      .d-flex.align-items-center.mb-3 h4 {
+        font-size: 18px !important;
+      }
+    
+      .d-flex.align-items-center.mb-3 button {
+        margin-top: 10px;
+      }
+    
+      .d-flex.gap-2.mb-3 {
+        justify-content: flex-start;
+      }
+  }
+
+    
+    
+    
+      
+    
+  
+  
