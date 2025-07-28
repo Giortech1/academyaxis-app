@@ -4,23 +4,27 @@ FROM node:18-alpine
 # Set the working directory in the container
 WORKDIR /app
 
+# Copy package files first for better Docker layer caching
 COPY package*.json ./
 
-RUN npm install --omit=dev
-
-# Copy the rest of the application code
-COPY . .
+# Install production dependencies only
+RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
 # Create a non-root user to run the application
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S academyaxis -u 1001
 
-# Change ownership of the app directory to the nodejs user
-RUN chown -R academyaxis:nodejs /app
+# Copy application files (this will include src/modules/)
+COPY --chown=academyaxis:nodejs . .
+
+# Switch to non-root user
 USER academyaxis
 
-# Expose the port the app runs on
+# Expose the port the app runs on (Cloud Run uses PORT env var)
 EXPOSE 8080
+
+# Set the PORT environment variable for Cloud Run
+ENV PORT=8080
 
 # Define the command to run the application
 CMD ["npm", "start"]
