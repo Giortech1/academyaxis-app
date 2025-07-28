@@ -266,10 +266,10 @@ jobs:
           SERVICE_URL=$(gcloud run services describe ${{ needs.load-config.outputs.service_name }} \
             --platform managed \
             --region ${{ needs.load-config.outputs.region }} \
-            --format 'value(status.url)')
+            --format 'value(status.url)')  
           
-          echo "🌐 AcademyAxis service deployed at: $SERVICE_URL"
-          
+          echo "🌐 AcademyAxis service depl oyed at: $SERVICE_URL"
+
           # Wait a moment for service to be ready
           sleep 15
           
