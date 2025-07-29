@@ -9,25 +9,25 @@ import NewsAndAnnouncements from './shared/components/Common/NewsAndAnnouncement
 import Settings from './shared/components/Common/Settings';
 
 // Student components
-import Dashboard from './modules/student/components/Dashboard';
-import StudentProfile from './modules/student/components/StudentProfile';
-import MyCourses from './modules/student/components/MyCourses';
-import Grades from './modules/student/components/Grades';
-import SubGrades from './modules/student/components/SubGrades';
-import Assignments from './modules/student/components/Assignments';
-import AssignmentDetails from './modules/student/components/AssignmentDetails';
-import Calendar from './modules/student/components/Calendar';
-import CalendarScreen from './modules/student/components/CalendarScreen';
-import AcademicCalendar from './modules/student/components/AcademicCalendar';
-import Exams from './modules/student/components/Exams';
-import ExamSyllabus from './modules/student/components/ExamSyllabus';
-import Quizzes from './modules/student/components/Quizzes';
-import InProgressCourse from './modules/student/components/InProgressCourse';
-import PastCourse from './modules/student/components/PastCourse';
-import Enrollment from './modules/student/components/Enrollment';
-import EnrollmentCourse from './modules/student/components/EnrollmentCourse';
-import Withdraw from './modules/student/components/Withdraw';
-import StudentTranscript from './modules/student/components/StudentTranscript';
+import Dashboard from './modules/student/src/Dashboard';
+import StudentProfile from './modules/student/src/StudentProfile';
+import MyCourses from './modules/student/src/Mycourse';
+import Grades from './modules/student/src/Grades';
+import SubGrades from './modules/student/src/SubGrades';
+import Assignments from './modules/student/src/Assignments';
+import AssignmentDetails from './modules/student/src/AssignmentDetails';
+import Calendar from './modules/teacher/src/Calendar.js';
+import CalendarScreen from './modules/student/src/CalendarScreen';
+import AcademicCalendar from './modules/student/src/AcademicCalendar';
+import Exams from './modules/student/src/Exams';
+import ExamSyllabus from './modules/student/src/Examsyllabus';
+import Quizzes from './modules/student/src/Quizzes';
+import InProgressCourse from './modules/student/src/InprogressCourse';
+import PastCourse from './modules/student/src/PastCourse';
+import Enrollment from './modules/student/src/Enrollement';
+import EnrollmentCourse from './modules/student/src/EnrollementCourse';
+import Withdraw from './modules/student/src/Withdraw';
+import StudentTranscript from './modules/student/src/StudentTranscript';
 
 // Teacher components
 import CourseDetails from './modules/teacher/src/Coursedetails';
