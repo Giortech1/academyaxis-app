@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
-import Leftside from "./Leftside";
 import Mycourse from "./Mycourse";
 import InprogressCourse from "./InprogressCourse";
 import PastCourse from "./PastCourse";
@@ -17,7 +16,7 @@ import Examsyllabus from './Examsyllabus';
 import CreateAnnouncement from './CreateAnnouncement';
 import Sections from './Sections';
 import CreateSection from './CreateSection';
-import Allstudents from './Allstudents';
+import SectionDetails from "./SectionDetails";
 import Timetable from './Timetable';
 import AddClass from './AddClass';
 import Attendence from './Attendence';
@@ -47,13 +46,14 @@ import Login from "./SignIn";
 import AddProgramScreen from "./AddPrograms";
 import CourseManagement from "./CourseManagement";
 import AddCourseScreen from "./AddCourse";
+import AdminSidebar from "./Leftside";
 
 function MainComponent() {
   const [activeButton, setActiveButton] = useState(1);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const isAuthPage =
     location.pathname === "/" ||
     location.pathname === "/signup" ||
@@ -88,11 +88,14 @@ function MainComponent() {
   };
 
   return (
-    <div className="d-flex">
+    <div className="d-flex" style={{ height: "100vh", overflow: "hidden" }}>
       {/* Sidebar */}
       <style>{`
-        .sidebar-container{
-        min-height:100vh !important;}
+        .sidebar-container {
+          height: 100vh !important; /* Changed from min-height to height */
+          overflow-y: auto; /* Allow internal scrolling if needed */
+        }
+        
         @media (max-width: 1000px) {
           .sidebar-container {
             width: 280px;
@@ -104,8 +107,9 @@ function MainComponent() {
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
           }
+          
           #quizes {
-            height:auto !important;
+            height: auto !important;
           }
   
           .mobile-sidebar.hidden {
@@ -124,6 +128,25 @@ function MainComponent() {
             overflow: hidden;
           }
         }
+        
+        /* Ensure main content area doesn't overflow */
+        .main-content-area {
+          height: 100vh;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+        
+        /* Mobile header should not add to total height */
+        .mobile-header {
+          flex-shrink: 0;
+        }
+        
+        /* Routes container should fill remaining space */
+        .routes-container {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0; /* Important for flex child */
+        }
       `}</style>
 
       {!isAuthPage && (
@@ -136,7 +159,7 @@ function MainComponent() {
             transform: isSidebarVisible ? "translateX(0)" : "translateX(-100%)",
           }}
         >
-          <Leftside
+          <AdminSidebar
             isSidebarVisible={isSidebarVisible}
             activeButton={activeButton}
             setActiveButton={setActiveButton}
@@ -164,10 +187,11 @@ function MainComponent() {
       )}
 
       {/* Main content */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+      <div className="main-content-area" style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column" }}>
         {/* Hamburger button for mobile */}
         {!isAuthPage && isSmallScreen && (
           <div
+            className="mobile-header"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -201,53 +225,55 @@ function MainComponent() {
           </div>
         )}
 
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/Mycourse" element={<Mycourse />} />
-          <Route path="/InprogressCourse" element={<InprogressCourse />} />
-          <Route path="/PastCourse" element={<PastCourse />} />
-          <Route path="/Feechallan" element={<Feechallan />} />
-          <Route path="/paywithcard" element={<Paywithcard />} />
-          <Route path="/feechallandetail" element={<Feechallandetail />} />
-          <Route path="/news-and-announcements" element={<NewsAndAnnoucements />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/calendarscreen" element={<CalendarScreen />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/exams" element={<Exams />} />
-          <Route path="/exam-syllabus" element={<Examsyllabus />} />
-          <Route path="/create-announcement" element={<CreateAnnouncement />} />
-          <Route path="/sections" element={<Sections />} />
-          <Route path="/create-section" element={<CreateSection />} />
-          <Route path="/Allstudents" element={<Allstudents />} />
-          <Route path="/Timetable" element={<Timetable />} />
-          <Route path="/addclass" element={<AddClass />} />
-          <Route path="/Attendence" element={<Attendence />} />
-          <Route path="/Student" element={<Student />} />
-          <Route path="/Teacher" element={<Teacher />} />
-          <Route path="Chats" element={<Chats />} />
-          <Route path="Fees" element={<Fees />} />
-          <Route path="/fees-collected" element={<FeesCollected />} />
-          <Route path="/fees-pending" element={<FeesPending />} />
-          <Route path="/FeesManagement" element={<FeesManagement />} />
-          <Route path="Result" element={<Result />} />
-          <Route path="Admin" element={<Admin />} />
-          <Route path="/student-details" element={<StudentDetails />} />
-          <Route path="/teacher-details/:id" element={<TeacherDetails />} />
-          <Route path="/student-profile/:id" element={<StudentProfile />} />
-          <Route path="/teacher-profile/:id" element={<TeacherProfile />} />
-          <Route path="/admin-details/:id" element={<AdminDetails />} />
-          <Route path="/admin-profile/:adminId" element={<AdminProfile />} />
-          <Route path="/add-student" element={<AddStudent />} />
-          <Route path="/add-teacher" element={<AddTeacher />} />
-          <Route path="teacherprofile1" element={<TeacherProfile1 />} />
-          <Route path="/add-admin" element={<AddAdmin />} />
-          <Route path="/department&room" element={<DepartmentAndRooms />} />
-          <Route path="/add-program" element={<AddProgramScreen />} />
-          <Route path="/course-management" element={<CourseManagement />} />
-          <Route path="/add-course" element={<AddCourseScreen />} />
-          <Route path="studentprofile1" element={<StudentProfile1 />} />
-        </Routes>
+        <div className="routes-container">
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/Mycourse" element={<Mycourse />} />
+            <Route path="/InprogressCourse" element={<InprogressCourse />} />
+            <Route path="/PastCourse" element={<PastCourse />} />
+            <Route path="/Feechallan" element={<Feechallan />} />
+            <Route path="/paywithcard" element={<Paywithcard />} />
+            <Route path="/feechallandetail" element={<Feechallandetail />} />
+            <Route path="/news-and-announcements" element={<NewsAndAnnoucements />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/calendarscreen" element={<CalendarScreen />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/exams" element={<Exams />} />
+            <Route path="/exam-syllabus" element={<Examsyllabus />} />
+            <Route path="/create-announcement" element={<CreateAnnouncement />} />
+            <Route path="/sections" element={<Sections />} />
+            <Route path="/create-section" element={<CreateSection />} />
+            <Route path="/SectionDetails" element={<SectionDetails />} />
+            <Route path="/Timetable" element={<Timetable />} />
+            <Route path="/addclass" element={<AddClass />} />
+            <Route path="/Attendence" element={<Attendence />} />
+            <Route path="/Student" element={<Student />} />
+            <Route path="/Teacher" element={<Teacher />} />
+            <Route path="Chats" element={<Chats />} />
+            <Route path="Fees" element={<Fees />} />
+            <Route path="/fees-collected" element={<FeesCollected />} />
+            <Route path="/fees-pending" element={<FeesPending />} />
+            <Route path="/FeesManagement" element={<FeesManagement />} />
+            <Route path="Result" element={<Result />} />
+            <Route path="Admin" element={<Admin />} />
+            <Route path="/student-details" element={<StudentDetails />} />
+            <Route path="/teacher-details/:id" element={<TeacherDetails />} />
+            <Route path="/student-profile/:id" element={<StudentProfile />} />
+            <Route path="/teacher-profile/:id" element={<TeacherProfile />} />
+            <Route path="/admin-details/:id" element={<AdminDetails />} />
+            <Route path="/admin-profile/:adminId" element={<AdminProfile />} />
+            <Route path="/add-student" element={<AddStudent />} />
+            <Route path="/add-teacher" element={<AddTeacher />} />
+            <Route path="teacherprofile1" element={<TeacherProfile1 />} />
+            <Route path="/add-admin" element={<AddAdmin />} />
+            <Route path="/department&room" element={<DepartmentAndRooms />} />
+            <Route path="/add-program" element={<AddProgramScreen />} />
+            <Route path="/course-management" element={<CourseManagement />} />
+            <Route path="/add-course" element={<AddCourseScreen />} />
+            <Route path="studentprofile1" element={<StudentProfile1 />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );

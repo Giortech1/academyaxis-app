@@ -219,7 +219,7 @@ const CalendarGridScreen = () => {
 
                 <div className="d-flex align-items-center">
                     <img
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="User"
                         className="rounded-circle me-2"
                         style={{ width: "54px", height: "54px" }}
@@ -228,10 +228,10 @@ const CalendarGridScreen = () => {
                         <div style={{ fontWeight: "500", fontSize: "14px" }}>
                             {userData?.first_name && userData?.last_name 
                                 ? `${userData.first_name} ${userData.last_name}` 
-                                : "Mian Hamad Khalil"}
+                                : "{userData?.full_name}"}
                         </div>
                         <div style={{ fontSize: "12px", color: "#6c757d" }}>
-                            {userData?.teacher_id || userData?.student_id || "123456"}
+                            {userData?.teacher_id}
                         </div>
                     </div>
                     <button className="bg-transparent border-0">

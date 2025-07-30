@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
 import Leftside from "./Leftside";
@@ -73,11 +73,14 @@ function MainComponent() {
   };
 
   return (
-    <div className="d-flex">
+    <div className="d-flex" style={{ height: "100vh", overflow: "hidden" }}>
       {/* Sidebar */}
       <style>{`
-        .sidebar-container{
-        min-height:100vh !important;}
+        .sidebar-container {
+          height: 100vh !important; /* Changed from min-height to height */
+          overflow-y: auto; /* Allow internal scrolling if needed */
+        }
+        
         @media (max-width: 1000px) {
           .sidebar-container {
             width: 280px;
@@ -89,8 +92,9 @@ function MainComponent() {
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
           }
+          
           #quizes {
-            height:auto !important;
+            height: auto !important;
           }
   
           .mobile-sidebar.hidden {
@@ -108,6 +112,25 @@ function MainComponent() {
           body.no-scroll {
             overflow: hidden;
           }
+        }
+        
+        /* Ensure main content area doesn't overflow */
+        .main-content-area {
+          height: 100vh;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+        
+        /* Mobile header should not add to total height */
+        .mobile-header {
+          flex-shrink: 0;
+        }
+        
+        /* Routes container should fill remaining space */
+        .routes-container {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0; /* Important for flex child */
         }
       `}</style>
 
@@ -149,10 +172,11 @@ function MainComponent() {
       )}
 
       {/* Main content */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+      <div className="main-content-area" style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column" }}>
         {/* Hamburger button for mobile */}
         {!isAuthPage && isSmallScreen && (
           <div
+            className="mobile-header"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -186,40 +210,41 @@ function MainComponent() {
           </div>
         )}
 
-        <Routes>
-        <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/quizzes" element={<Quizzes />} />
-          <Route path="/assignments" element={<Assignments />} />
-          <Route path="/exams" element={<Exams />} />
-          <Route path="/mycourse" element={<Mycourse />} />
-          <Route path="/assignments/details/:id" element={<AssignmentDetails />} />
-          <Route path="/coursedetails" element={<Coursedetails />} />
-          <Route path="/chats" element={<Chats />} />
-          <Route path="/feechallan" element={<Feechallan />} />
-          <Route path="/feechallandetail" element={<Feechallandetail />} />
-          <Route path="/paywithcard" element={<Paywithcard />} />
-          <Route path="/Grades" element={<Grades />} />
-          <Route path="/SubGrades" element={<SubGrades />} />
-          <Route path="/calendarscreen" element={<CalendarScreen />} />
-          <Route path="/timetable" element={<TimeTable />} />
-          <Route path="/news-and-announcements" element={<NewsAndAnnoucements />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/exam-syllabus" element={<Examsyllabus />} />
-          <Route path="/InprogressCourse" element={<InprogressCourse />} />
-          <Route path="/PastCourse" element={<PastCourse />} />
-          <Route path="/Withdraw" element={<Withdraw />} />
-          <Route path="/enrollement" element={<Enrollement />} />
-          <Route path="/enrollementcourse" element={<EnrollementCourse />} />
-          <Route path="/studentprofile" element={<StudentProfile />} />
-          <Route path="/quiz/:id" element={<QuizDetail />} />
-          <Route path="/quiz-detail/:id" element={<QuizDetail />} />
-          <Route path="/assignment-detail/:id" element={<AssignmentDetails />} />
-          <Route path="/student-transcript" element={<StudentTranscript />} />
-          <Route path="/payment-success" element={<FeesSlip />} />
-          <Route path="/slip-details" element={<SlipDetails />} />
-          <Route path="/academycalendar" element={<AcademicCalendar />} />
-        </Routes>
+        <div className="routes-container">
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/quizzes" element={<Quizzes />} />
+            <Route path="/assignments" element={<Assignments />} />
+            <Route path="/exams" element={<Exams />} />
+            <Route path="/mycourse" element={<Mycourse />} />
+            <Route path="/assignments/details/:id" element={<AssignmentDetails />} />
+            <Route path="/quizzes/details/:id" element={<QuizDetail />} />
+            <Route path="/coursedetails" element={<Coursedetails />} />
+            <Route path="/chats" element={<Chats />} />
+            <Route path="/feechallan" element={<Feechallan />} />
+            <Route path="/feechallandetail" element={<Feechallandetail />} />
+            <Route path="/paywithcard" element={<Paywithcard />} />
+            <Route path="/Grades" element={<Grades />} />
+            <Route path="/SubGrades" element={<SubGrades />} />
+            <Route path="/calendarscreen" element={<CalendarScreen />} />
+            <Route path="/timetable" element={<TimeTable />} />
+            <Route path="/news-and-announcements" element={<NewsAndAnnoucements />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/exam-syllabus" element={<Examsyllabus />} />
+            <Route path="/InprogressCourse" element={<InprogressCourse />} />
+            <Route path="/PastCourse" element={<PastCourse />} />
+            <Route path="/Withdraw" element={<Withdraw />} />
+            <Route path="/enrollement" element={<Enrollement />} />
+            <Route path="/enrollementcourse" element={<EnrollementCourse />} />
+            <Route path="/studentprofile" element={<StudentProfile />} />
+            <Route path="/assignment-detail/:id" element={<AssignmentDetails />} />
+            <Route path="/student-transcript" element={<StudentTranscript />} />
+            <Route path="/payment-success" element={<FeesSlip />} />
+            <Route path="/slip-details" element={<SlipDetails />} />
+            <Route path="/academycalendar" element={<AcademicCalendar />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );

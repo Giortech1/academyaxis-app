@@ -1,32 +1,30 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, orderBy, serverTimestamp, limit, onSnapshot, increment } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import { StudentPortalLoading } from './StudentPortalLoading';
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [userData, setUserData] = useState(null);
-    const [adminData, setAdminData] = useState([]);
-    const [deptsData, setDeptsData] = useState([]);
     const [sections, setSections] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+
             try {
                 if (authUser) {
                     setUser(authUser);
                     const userDoc = await getDoc(doc(db, 'users', authUser.uid));
                     setUserData(userDoc.exists() ? userDoc.data() : null);
 
-                    await refreshAdminData();
-                    await refreshDeptsData();
                     await refreshSections(userDoc.data()?.student_id);
                 } else {
                     setUser(null);
@@ -41,7 +39,6 @@ export const UserProvider = ({ children }) => {
 
         return () => unsubscribe();
     }, []);
-
 
     const registerUser = async (data) => {
         try {
@@ -94,7 +91,7 @@ export const UserProvider = ({ children }) => {
                 setUserData(data);
 
                 toast.success("Login Successful! Welcome back.");
-                navigate('/TDashboard');
+                navigate('/dashboard');
 
                 return { success: true };
             } else {
@@ -196,99 +193,58 @@ export const UserProvider = ({ children }) => {
         }
     };
 
-    const refreshDeptsData = async () => {
-        try {
-            const collectionRef = collection(db, 'departments');
-            const querySnapshot = await getDocs(collectionRef);
-
-            const docs = [];
-            querySnapshot.forEach((doc) => {
-                docs.push({ id: doc.id, ...doc.data() });
-            });
-
-            setDeptsData(docs);
-
-            console.log(`Departments data refresh successfully!`);
-            return { success: true, data: docs };
-        } catch (error) {
-            console.error('Error resfreshing departments data:', error);
-            return { success: false, error: error.message };
-        }
-    };
-
     const refreshSections = async (studentId) => {
         try {
             const sectionsRef = collection(db, 'sections');
-            const snapshot = await getDocs(sectionsRef);
+            const q = query(sectionsRef, where('student_ids', 'array-contains', studentId));
+            const snapshot = await getDocs(q);
 
-            const studentSections = [];
-
-            for (const docSnap of snapshot.docs) {
-                const data = docSnap.data();
-                const studentIds = data.student_ids || [];
-
-                const isStudentMatched = studentIds.includes(studentId);
-
-                if (isStudentMatched) {
-                    const sectionId = docSnap.id;
-
-                    // Fetch assignments
-                    const assignmentsRef = collection(db, 'sections', sectionId, 'assignments');
-                    const assignmentsSnap = await getDocs(assignmentsRef);
-                    const assignments = assignmentsSnap.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-
-                    // Fetch quizzes
-                    const quizzesRef = collection(db, 'sections', sectionId, 'quizzes');
-                    const quizzesSnap = await getDocs(quizzesRef);
-                    const quizzes = quizzesSnap.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-
-                    // Fetch attendance
-                    const attendanceRef = collection(db, 'sections', sectionId, 'attendance');
-                    const attendanceSnap = await getDocs(attendanceRef);
-                    const attendance = attendanceSnap.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-
-                    studentSections.push({
-                        id: sectionId,
-                        ...data,
-                        assignments,
-                        quizzes,
-                        attendance,
-                    });
-                }
+            if (snapshot.empty) {
+                setSections([]);
+                return { success: true, data: [] };
             }
+
+            const sectionsPromises = snapshot.docs.map(async (docSnap) => {
+                const data = docSnap.data();
+                const sectionId = docSnap.id;
+
+                const [assignmentsSnap, quizzesSnap, attendanceSnap] = await Promise.all([
+                    getDocs(collection(db, 'sections', sectionId, 'assignments')),
+                    getDocs(collection(db, 'sections', sectionId, 'quizzes')),
+                    getDocs(collection(db, 'sections', sectionId, 'attendance'))
+                ]);
+
+                const assignments = assignmentsSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                const quizzes = quizzesSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                const attendance = attendanceSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                return {
+                    id: sectionId,
+                    ...data,
+                    assignments,
+                    quizzes,
+                    attendance,
+                };
+            });
+
+            const studentSections = await Promise.all(sectionsPromises);
 
             setSections(studentSections);
             return { success: true, data: studentSections };
         } catch (error) {
-            console.error('Error fetching student sections with assignments, quizzes, and attendance:', error);
+            console.error('Error fetching student sections:', error);
             return { success: false, message: error.message };
-        }
-    };
-
-    const refreshAdminData = async () => {
-        try {
-            const userDocRef = doc(db, 'data', 'data');
-            const userDoc = await getDoc(userDocRef);
-            setAdminData(userDoc.data());
-
-            if (userDoc.exists()) {
-                console.log('Admin data refresh successfully!');
-                return { success: true, data: userDoc.data() };
-            } else {
-                return { success: false, error: 'Doc not found' };
-            }
-        } catch (error) {
-            console.error('Error refresh admin data:', error);
-            return { success: false, error: error.message };
         }
     };
 
@@ -621,11 +577,620 @@ export const UserProvider = ({ children }) => {
         }
     };
 
+    const fetchAssignmentById = async (sectionId, assignmentId) => {
+        try {
+            if (!sectionId || !assignmentId) {
+                throw new Error("Section ID and Assignment ID are required");
+            }
+
+            const assignmentRef = doc(db, 'sections', sectionId, 'assignments', assignmentId);
+            const assignmentSnap = await getDoc(assignmentRef);
+
+            if (!assignmentSnap.exists()) {
+                throw new Error("Assignment not found");
+            }
+
+            return {
+                success: true,
+                data: {
+                    id: assignmentSnap.id,
+                    ...assignmentSnap.data(),
+                },
+            };
+        } catch (error) {
+            console.error('Error fetching assignment by ID:', error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
+    const fetchQuizById = async (sectionId, quizId) => {
+        try {
+            if (!sectionId || !quizId) {
+                throw new Error("Section ID and Quiz ID are required");
+            }
+
+            const quizRef = doc(db, 'sections', sectionId, 'quizzes', quizId);
+            const quizSnap = await getDoc(quizRef);
+
+            if (!quizSnap.exists()) {
+                throw new Error("Quiz not found");
+            }
+
+            return {
+                success: true,
+                data: {
+                    id: quizSnap.id,
+                    ...quizSnap.data(),
+                },
+            };
+        } catch (error) {
+            console.error('Error fetching Quiz by ID:', error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
+    const updateAssignmentById = async (sectionId, assignmentId, submissionData) => {
+        try {
+            if (!sectionId || !assignmentId) {
+                throw new Error("Section ID and Assignment ID are required");
+            }
+
+            const assignmentRef = doc(db, 'sections', sectionId, 'assignments', assignmentId);
+
+            await updateDoc(assignmentRef, {
+                submitted: arrayUnion(submissionData)
+            });
+
+            return {
+                success: true,
+                message: 'Assignment submitted successfully!'
+            };
+        } catch (error) {
+            console.error('Error submitting assignment by ID:', error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
+    const updateQuizById = async (sectionId, quizId, submissionData) => {
+        try {
+            if (!sectionId || !quizId) {
+                throw new Error("Section ID and Quiz ID are required");
+            }
+
+            const quizRef = doc(db, 'sections', sectionId, 'quizzes', quizId);
+
+            await updateDoc(quizRef, {
+                submitted: arrayUnion(submissionData)
+            });
+
+            return {
+                success: true,
+                message: 'Quiz submitted successfully!'
+            };
+        } catch (error) {
+            console.error('Error submitting Quiz by ID:', error);
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+    };
+
+    const fetchAnnouncements = async (userId) => {
+        try {
+            const announcementsRef = collection(db, "announcements");
+
+            const queryAll = query(
+                announcementsRef,
+                where("type", "==", "All")
+            );
+
+            const queryAdmin = query(
+                announcementsRef,
+                where("type", "==", "Students-Admin")
+            );
+
+            const queryStudent = query(
+                announcementsRef,
+                where("type", "==", "Students"),
+                where("student_ids", "array-contains", userId)
+            );
+
+            const [allSnap, adminSnap, studentSnap] = await Promise.all([
+                getDocs(queryAll),
+                getDocs(queryAdmin),
+                getDocs(queryStudent),
+            ]);
+
+            const fromAll = allSnap.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            const fromAdmin = adminSnap.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            const fromStudent = studentSnap.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            const combined = [...fromAll, ...fromAdmin, ...fromStudent];
+
+            const unique = Array.from(
+                new Map(combined.map((item) => [item.id, item])).values()
+            );
+
+            return { success: true, data: unique };
+        } catch (error) {
+            console.error("Error fetching student announcements:", error);
+            return { success: false, data: [] };
+        }
+    };
+
+    const createChat = async (participantId) => {
+        try {
+            if (!user || !userData) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            const currentUserId = user.uid;
+
+            const existingChat = await findExistingChat(currentUserId, participantId);
+            if (existingChat.success) {
+                return { success: true, chatId: existingChat.chatId, message: 'Chat already exists' };
+            }
+
+            const participantDoc = await getDoc(doc(db, 'users', participantId));
+            const participantData = participantDoc.exists() ? participantDoc.data() : {};
+            const currentTimestamp = new Date();
+
+            const chatRef = await addDoc(collection(db, 'chats'), {
+                participants: [currentUserId, participantId],
+                participantData: {
+                    [currentUserId]: {
+                        name: userData?.full_name || userData?.email,
+                        email: userData?.email,
+                        avatar: userData?.profile_pic || null,
+                        lastSeen: currentTimestamp,
+                        unreadCount: 0
+                    },
+                    [participantId]: {
+                        name: participantData?.full_name || participantData?.email || 'Unknown User',
+                        email: participantData?.email || '',
+                        avatar: participantData?.profile_pic || null,
+                        lastSeen: currentTimestamp,
+                        unreadCount: 0
+                    }
+                },
+                messages: [],
+                lastMessage: {
+                    text: '',
+                    senderId: '',
+                    timestamp: currentTimestamp,
+                    messageIndex: -1
+                },
+                totalMessages: 0,
+                createdAt: currentTimestamp,
+                updatedAt: currentTimestamp
+            });
+
+            console.log('New chat doc created!');
+            return { success: true, chatId: chatRef.id };
+        } catch (error) {
+            console.error('Error creating chat:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const findExistingChat = async (userId1, userId2) => {
+        try {
+            const chatsRef = collection(db, 'chats');
+            const q = query(
+                chatsRef,
+                where('participants', 'array-contains', userId1)
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            for (const doc of querySnapshot.docs) {
+                const chatData = doc.data();
+                if (chatData.participants.includes(userId2)) {
+                    return { success: true, chatId: doc.id, data: chatData };
+                }
+            }
+
+            return { success: false, message: 'No existing chat found' };
+        } catch (error) {
+            console.error('Error finding existing chat:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const getUserChats = async () => {
+        try {
+            if (!user) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            const chatsRef = collection(db, 'chats');
+            const q = query(
+                chatsRef,
+                where('participants', 'array-contains', user.uid),
+                orderBy('updatedAt', 'desc')
+            );
+
+            const querySnapshot = await getDocs(q);
+            const chats = [];
+
+            querySnapshot.forEach((doc) => {
+                const chatData = doc.data();
+                const otherUserId = chatData.participants.find(id => id !== user.uid);
+                const otherUserData = chatData.participantData[otherUserId];
+                const currentUserData = chatData.participantData[user.uid];
+
+                chats.push({
+                    id: doc.id,
+                    ...chatData,
+                    otherUser: {
+                        id: otherUserId,
+                        ...otherUserData
+                    },
+                    unreadCount: currentUserData?.unreadCount || 0
+                });
+            });
+
+            return { success: true, data: chats };
+        } catch (error) {
+            console.error('Error getting user chats:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const sendMessage = async (chatId, messageText, messageType = 'text') => {
+        try {
+            if (!user || !userData) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            if (!messageText.trim()) {
+                return { success: false, error: 'Message cannot be empty' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const otherUserId = chatData.participants.find(id => id !== user.uid);
+            const currentTimestamp = new Date();
+
+            const newMessage = {
+                id: `${Date.now()}_${user.uid}`,
+                text: messageText,
+                senderId: user.uid,
+                senderName: userData?.full_name || userData?.email,
+                senderAvatar: userData?.profile_pic || null,
+                type: messageType,
+                timestamp: currentTimestamp,
+                deleted: false
+            };
+
+            await updateDoc(chatRef, {
+                messages: arrayUnion(newMessage),
+                lastMessage: {
+                    text: messageText,
+                    senderId: user.uid,
+                    senderName: userData?.full_name || userData?.email,
+                    timestamp: currentTimestamp,
+                    messageIndex: (chatData.totalMessages || 0)
+                },
+                totalMessages: increment(1),
+                updatedAt: currentTimestamp,
+                [`participantData.${user.uid}.lastSeen`]: currentTimestamp,
+                [`participantData.${otherUserId}.unreadCount`]: increment(1)
+            });
+
+            return { success: true, message: 'Message sent successfully' };
+        } catch (error) {
+            console.error('Error sending message:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const getChatMessages = async (chatId) => {
+        try {
+            if (!chatId) {
+                return { success: false, error: 'Chat ID is required' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const sortedMessages = messages.sort((a, b) => {
+                if (a.timestamp && b.timestamp) {
+                    return a.timestamp.seconds - b.timestamp.seconds;
+                }
+                return 0;
+            });
+
+            return { success: true, data: sortedMessages };
+        } catch (error) {
+            console.error('Error getting chat messages:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const subscribeToMessages = (chatId, callback) => {
+        try {
+            if (!chatId) {
+                throw new Error('Chat ID is required');
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            let lastMessageCount = 0;
+
+            const unsubscribe = onSnapshot(chatRef, (doc) => {
+                if (doc.exists()) {
+                    const chatData = doc.data();
+                    const messages = chatData.messages || [];
+
+                    if (messages.length !== lastMessageCount) {
+                        lastMessageCount = messages.length;
+
+                        const sortedMessages = [...messages].sort((a, b) => {
+                            const timeA = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
+                            const timeB = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
+                            return timeA - timeB;
+                        });
+
+                        callback(sortedMessages);
+                    } else {
+                        callback([]);
+                    }
+                } else {
+                    callback([]);
+                }
+            });
+
+            return unsubscribe;
+        } catch (error) {
+            console.error('Error subscribing to messages:', error);
+            return null;
+        }
+    };
+
+    const subscribeToUserChats = (callback) => {
+        try {
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            const chatsRef = collection(db, 'chats');
+            const q = query(
+                chatsRef,
+                where('participants', 'array-contains', user.uid),
+                orderBy('updatedAt', 'desc')
+            );
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const chats = [];
+                snapshot.forEach((doc) => {
+                    const chatData = doc.data();
+                    const otherUserId = chatData.participants.find(id => id !== user.uid);
+                    const otherUserData = chatData.participantData[otherUserId];
+                    const currentUserData = chatData.participantData[user.uid];
+
+                    chats.push({
+                        id: doc.id,
+                        ...chatData,
+                        otherUser: {
+                            id: otherUserId,
+                            ...otherUserData
+                        },
+                        unreadCount: currentUserData?.unreadCount || 0
+                    });
+                });
+                callback(chats);
+            });
+
+            return unsubscribe;
+        } catch (error) {
+            console.error('Error subscribing to user chats:', error);
+            return null;
+        }
+    };
+
+    const markMessagesAsRead = async (chatId) => {
+        try {
+            if (!user || !chatId) {
+                return { success: false, error: 'User not authenticated or chat ID missing' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const currentTimestamp = new Date();
+
+            await updateDoc(chatRef, {
+                [`participantData.${user.uid}.lastSeen`]: currentTimestamp,
+                [`participantData.${user.uid}.unreadCount`]: 0
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error marking messages as read:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const deleteMessage = async (chatId, messageId) => {
+        try {
+            if (!user) {
+                return { success: false, error: 'User not authenticated' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const updatedMessages = messages.map(msg => {
+                if (msg.id === messageId && msg.senderId === user.uid) {
+                    return {
+                        ...msg,
+                        text: 'This message was deleted',
+                        deleted: true,
+                        deletedAt: serverTimestamp()
+                    };
+                }
+                return msg;
+            });
+
+            await updateDoc(chatRef, {
+                messages: updatedMessages,
+                updatedAt: serverTimestamp()
+            });
+
+            return { success: true, message: 'Message deleted successfully' };
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const searchUsers = async (searchTerm) => {
+        try {
+            if (!searchTerm.trim()) {
+                return { success: false, error: 'Search term is required' };
+            }
+
+            const usersRef = collection(db, 'users');
+            const querySnapshot = await getDocs(usersRef);
+
+            const users = [];
+            querySnapshot.forEach((doc) => {
+                const userData = doc.data();
+                const searchFields = [
+                    userData.full_name || '',
+                    userData.email || '',
+                    userData.student_id || '',
+                    userData.teacher_id || ''
+                ].join(' ').toLowerCase();
+
+                if (searchFields.includes(searchTerm.toLowerCase()) && doc.id !== user.uid) {
+                    users.push({
+                        id: doc.id,
+                        ...userData
+                    });
+                }
+            });
+
+            return { success: true, data: users };
+        } catch (error) {
+            console.error('Error searching users:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const getChatStats = async (chatId) => {
+        try {
+            if (!chatId) {
+                return { success: false, error: 'Chat ID is required' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const stats = {
+                totalMessages: messages.length,
+                myMessages: messages.filter(msg => msg.senderId === user.uid).length,
+                otherMessages: messages.filter(msg => msg.senderId !== user.uid).length,
+                createdAt: chatData.createdAt,
+                lastActivity: chatData.updatedAt
+            };
+
+            return { success: true, data: stats };
+        } catch (error) {
+            console.error('Error getting chat stats:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const batchDeleteMessages = async (chatId, messageIds) => {
+        try {
+            if (!user || !messageIds.length) {
+                return { success: false, error: 'Invalid parameters' };
+            }
+
+            const chatRef = doc(db, 'chats', chatId);
+            const chatDoc = await getDoc(chatRef);
+
+            if (!chatDoc.exists()) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            const messages = chatData.messages || [];
+
+            const updatedMessages = messages.map(msg => {
+                if (messageIds.includes(msg.id) && msg.senderId === user.uid) {
+                    return {
+                        ...msg,
+                        text: 'This message was deleted',
+                        deleted: true,
+                        deletedAt: serverTimestamp()
+                    };
+                }
+                return msg;
+            });
+
+            await updateDoc(chatRef, {
+                messages: updatedMessages,
+                updatedAt: serverTimestamp()
+            });
+
+            return { success: true, message: 'Messages deleted successfully' };
+        } catch (error) {
+            console.error('Error batch deleting messages:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
     const value = {
         user,
         userData,
-        adminData,
-        deptsData,
         sections,
         isLoading,
         isAdmin: userData?.role === 'admin',
@@ -636,8 +1201,6 @@ export const UserProvider = ({ children }) => {
         signOut,
         fetchCollection,
         refreshUserData,
-        refreshAdminData,
-        refreshDeptsData,
         refreshSections,
         updateDocById,
         deleteDocById,
@@ -651,8 +1214,31 @@ export const UserProvider = ({ children }) => {
         getStudentAttendanceStats,
         getAttendanceSummary,
         fetchAssignments,
-        fetchQuizzes
+        fetchQuizzes,
+        fetchAssignmentById,
+        fetchQuizById,
+        updateAssignmentById,
+        updateQuizById,
+
+        createChat,
+        findExistingChat,
+        getUserChats,
+        sendMessage,
+        getChatMessages,
+        subscribeToMessages,
+        subscribeToUserChats,
+        markMessagesAsRead,
+        deleteMessage,
+        searchUsers,
+        getChatStats,
+        batchDeleteMessages,
+        fetchAnnouncements
+
     };
+
+    if (isLoading) {
+        return <StudentPortalLoading isLoading={isLoading} />;
+    }
 
     return (
         <UserContext.Provider value={value}>

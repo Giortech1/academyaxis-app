@@ -1,10 +1,11 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, writeBatch, orderBy, serverTimestamp, limit, onSnapshot, increment } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import { AdminPortalLoading } from './AdminPortalLoading';
 
 export const UserContext = createContext();
 
@@ -13,6 +14,7 @@ export const UserProvider = ({ children }) => {
     const [userData, setUserData] = useState(null);
     const [adminData, setAdminData] = useState([]);
     const [deptsData, setDeptsData] = useState([]);
+    const [sections, setSections] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -24,11 +26,10 @@ export const UserProvider = ({ children }) => {
                     const userDoc = await getDoc(doc(db, 'users', authUser.uid));
                     setUserData(userDoc.exists() ? userDoc.data() : null);
 
-                    const result = await fetchDocById('data', 'data');
-                    setAdminData(result?.data);
+                    await refreshAdminData();
+                    await refreshDeptsData();
+                    await refreshSections();
 
-                    const response = await fetchCollection('departments');
-                    setDeptsData(response?.data);
                 } else {
                     setUser(null);
                     setUserData(null);
@@ -42,7 +43,6 @@ export const UserProvider = ({ children }) => {
 
         return () => unsubscribe();
     }, []);
-
 
     const registerUser = async (data) => {
         try {
@@ -232,6 +232,68 @@ export const UserProvider = ({ children }) => {
         } catch (error) {
             console.error('Error refresh admin data:', error);
             return { success: false, error: error.message };
+        }
+    };
+
+    const refreshSections = async () => {
+        try {
+            const sectionsRef = collection(db, 'sections');
+            const snapshot = await getDocs(sectionsRef);
+
+            if (snapshot.empty) {
+                setSections([]);
+                return { success: true, data: [] };
+            }
+
+            const sectionsPromises = snapshot.docs.map(async (docSnap) => {
+                const data = docSnap.data();
+                const sectionId = docSnap.id;
+
+                const [studentsSnap, assignmentsSnap, quizzesSnap, attendanceSnap] = await Promise.all([
+                    getDocs(collection(db, 'sections', sectionId, 'students')),
+                    getDocs(collection(db, 'sections', sectionId, 'assignments')),
+                    getDocs(collection(db, 'sections', sectionId, 'quizzes')),
+                    getDocs(collection(db, 'sections', sectionId, 'attendance'))
+                ]);
+
+                const students = studentsSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                const assignments = assignmentsSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                const quizzes = quizzesSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                const attendance = attendanceSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                return {
+                    id: sectionId,
+                    ...data,
+                    students,
+                    assignments,
+                    quizzes,
+                    attendance,
+                };
+            });
+
+            const allSections = await Promise.all(sectionsPromises);
+
+            console.log('Sections data refresh successfully!');
+            setSections(allSections);
+            return { success: true, data: allSections };
+        } catch (error) {
+            console.error('Error fetching all sections:', error);
+            return { success: false, message: error.message };
         }
     };
 
@@ -603,11 +665,76 @@ export const UserProvider = ({ children }) => {
         }
     };
 
+    const createSection = async (sectionData, students) => {
+        try {
+            const sectionRef = await addDoc(collection(db, "sections"), sectionData);
+            const sectionId = sectionRef.id;
+
+            const batch = writeBatch(db);
+
+            students.forEach(({ student_id, ...studentData }) => {
+                if (!student_id) {
+                    throw new Error("Each student object must contain an `id` field.");
+                }
+
+                const studentDocRef = doc(db, `sections/${sectionId}/students`, student_id);
+
+                batch.set(studentDocRef, studentData);
+            });
+
+            await batch.commit();
+
+            console.log(
+                `✅ Section ${sectionId} created with ${students.length} students`
+            );
+            return { success: true, sectionId };
+        } catch (error) {
+            console.error("❌ Failed to create section with students:", error);
+            return { success: false, error };
+        }
+    };
+
+    const createAnnouncement = async (announcementData) => {
+        try {
+            const colRef = collection(db, "announcements");
+            const docRef = await addDoc(colRef, {});
+
+            const dataWithId = { ...announcementData, id: docRef.id };
+            await setDoc(docRef, dataWithId);
+
+            console.log("Announcement created with ID:", docRef.id);
+            return { success: true, id: docRef.id };
+        } catch (error) {
+            console.error("Error creating announcement:", error);
+            return { success: false, message: error.message };
+        }
+    };
+
+    const fetchLatestAnnouncements = async (number) => {
+        try {
+            const announcementsRef = collection(db, "announcements");
+            const q = query(announcementsRef, orderBy("createdAt", "desc"), limit(number));
+            const querySnapshot = await getDocs(q);
+
+            const announcements = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            return { success: true, data: announcements };
+        } catch (error) {
+            console.error("Error fetching announcements:", error);
+            return { success: false, data: [] };
+        }
+    };
+
+
     const value = {
         user,
         userData,
         adminData,
         deptsData,
+        sections,
         isLoading,
         isAdmin: userData?.role === 'admin',
         isTeacher: userData?.role === 'teacher',
@@ -619,6 +746,7 @@ export const UserProvider = ({ children }) => {
         refreshUserData,
         refreshAdminData,
         refreshDeptsData,
+        refreshSections,
         updateDocById,
         deleteDocById,
         fetchAllUsers,
@@ -632,7 +760,14 @@ export const UserProvider = ({ children }) => {
         deleteCourse,
         editProgram,
         deleteProgram,
+        createSection,
+        createAnnouncement,
+        fetchLatestAnnouncements
     };
+
+    if (isLoading) {
+        return <AdminPortalLoading isLoading={isLoading} />;
+    }
 
     return (
         <UserContext.Provider value={value}>

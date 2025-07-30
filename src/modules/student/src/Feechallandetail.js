@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Row, Col, Button, Form, Image } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useLocation } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 function Coursedetails() {
+    const { userData } = useContext(UserContext);
     const [isSidebarVisible, setSidebarVisible] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const navigate = useNavigate();
@@ -55,14 +57,14 @@ function Coursedetails() {
                     <div className="d-flex align-items-center">
                         <img
                             id="feeimg"
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             className="rounded-circle me-2"
                             style={{ width: "54px", height: "54px" }}
                         />
                         <div className="me-0">
-                            <div style={{ fontWeight: "500", fontSize: "14px" }}>Mian Hamad Khalil</div>
-                            <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                            <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.student_id}</div>
                         </div>
                     </div>
                 </header>

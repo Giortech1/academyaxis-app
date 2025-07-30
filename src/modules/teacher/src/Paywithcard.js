@@ -10,8 +10,8 @@ const FeesChallan = () => {
 
     // Mock data for payment summary and user details
     const [userDetails] = useState({
-        name: "Jhon Deo",
-        id: "123456",
+        name: "{userData?.full_name}",
+        id: "124567",
         avatar: "/assets/avatar.jpeg",
     });
 

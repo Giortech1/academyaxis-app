@@ -1,387 +1,194 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
-
+import React, { useState, useEffect, useContext } from 'react';
+import { Container, Spinner } from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
+import { UserContext } from './UserContext.js';
 
 function Timetable() {
+    const { userData, deptsData, sections } = useContext(UserContext);
+
     const [tableData, setTableData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
 
-  const handleClick = () => {
-    navigate('/addclass');
-  };
-
     const [searchText, setSearchText] = useState("");
-    const [selectedDepartment, setSelectedDepartment] = useState("Department of Computer Science");
-    const [selectedYear, setSelectedYear] = useState("2023-2024");
+    const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
+    const [selectedYear, setSelectedYear] = useState("2025");
+    const years = ["2025", "2024", "2023", "2022", "2021"];
 
-    // Modal form states
-    const [modalDepartment, setModalDepartment] = useState("");
-    const [modalRoom, setModalRoom] = useState("");
+    console.log('Dept data: ', deptsData);
+    console.log('Sections: ', sections);
 
-    // Props for Header - departments would be fetched from API in real app
-    const departments = [
-        "Department of Computer Science",
-        "Department of Engineering",
-        "Department of Mathematics",
-        "Department of Physics"
-    ];
-    
-    const rooms = [
-        "CS-103-B",
-        "CS-105-A",
-        "CS-201-C",
-        "CS-302-A",
-        "EN-103-B",
-        "PH-101-A",
-        "MA-202-C"
-    ];
-    
-    const years = ["2023-2024", "2022-2023", "2021-2022"];
-
-    // Fetch data
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // Mock data for demonstration
-                const mockData = [
-                    {
-                        id: 1,
-                        subjectName: "Demo Department Name",
-                        roomNo: "CS-103-B",
-                        strength: 26,
-                        departmentName: "Department of Computer Science",
-                        participants: 17,
-                        year: "2023-2024"
-                    },
-                    {
-                        id: 2,
-                        subjectName: "Demo Department Name",
-                        roomNo: "CS-103-B",
-                        strength: 30,
-                        departmentName: "Department of Computer Science",
-                        participants: 24,
-                        year: "2023-2024"
-                    },
-                    {
-                        id: 3,
-                        subjectName: "Demo Department Name",
-                        roomNo: "CS-103-B",
-                        strength: 32,
-                        departmentName: "Department of Computer Science",
-                        participants: 28,
-                        year: "2023-2024"
-                    },
-                    {
-                        id: 4,
-                        subjectName: "Demo Department Name",
-                        roomNo: "CS-103-B",
-                        strength: 25,
-                        departmentName: "Department of Computer Science",
-                        participants: 20,
-                        year: "2023-2024"
-                    },
-                    {
-                        id: 5,
-                        subjectName: "Demo Department Name",
-                        roomNo: "CS-103-B",
-                        strength: 35,
-                        departmentName: "Department of Engineering",
-                        participants: 30,
-                        year: "2023-2024"
-                    },
-                    {
-                        id: 6,
-                        subjectName: "Demo Department Name",
-                        roomNo: "CS-103-B",
-                        strength: 22,
-                        departmentName: "Department of Physics",
-                        participants: 18,
-                        year: "2023-2024"
-                    },
-                    {
-                        id: 7,
-                        subjectName: "Demo Department Name",
-                        roomNo: "CS-103-B",
-                        strength: 28,
-                        departmentName: "Department of Mathematics",
-                        participants: 22,
-                        year: "2022-2023"
-                    }
-                ];
+        const convertSectionsToTableData = () => {
+            if (!sections || !Array.isArray(sections)) {
+                setTableData([]);
+                setFilteredData([]);
+                setIsLoading(false);
+                return;
+            }
 
-                setTableData(mockData);
-                setFilteredData(mockData);
+            try {
+                const convertedData = sections.map((section, index) => {
+                    const course = section.course || {};
+                    const department = section.department || {};
+                    const schedule = section.schedule || {};
+                    const students = section.students || [];
+                    const teachers = section.teachers || [];
+
+                    const formatSchedule = () => {
+                        const days = schedule.days || [];
+                        const startTime = schedule.start_time || '';
+                        const endTime = schedule.end_time || '';
+
+                        if (days.length === 0) return 'No schedule';
+
+                        const dayNames = days.map(day =>
+                            day.charAt(0).toUpperCase() + day.slice(1)
+                        ).join(', ');
+
+                        return `${dayNames} ${startTime}-${endTime}`;
+                    };
+
+                    const avatars = section?.students
+                        .filter(student => student.profile_pic && typeof student.profile_pic === 'string')
+                        .map(student => student.profile_pic);
+
+                    return {
+                        id: section.id || `section-${index}`,
+                        subjectName: course.name || 'Unknown Course',
+                        courseCode: course.code || '',
+                        roomNo: section.room_no || 'TBA',
+                        strength: students.length || 0,
+                        departmentName: department.name || 'Unknown Department',
+                        departmentCode: department.code || '',
+                        participants: students.length || 0,
+                        year: new Date(section.createdAt).getFullYear().toString() || "2025",
+                        section: section.section || '',
+                        status: section.status || 'active',
+                        schedule: formatSchedule(),
+                        teachers: teachers.map(t => t.full_name || t.name || 'Unknown').join(', '),
+                        avatars: avatars,
+                        program: section.program?.name || '',
+                        creditHours: course.credit_hours || '3'
+                    };
+                });
+
+                setTableData(convertedData);
+                setFilteredData(convertedData);
+
+                if (deptsData && deptsData.length > 0 && !selectedDepartment) {
+                    setSelectedDepartment(deptsData[0].name);
+                }
+
                 setIsLoading(false);
             } catch (err) {
-                setError("Failed to fetch data. Please try again later.");
+                console.error('Error converting sections data:', err);
+                setError("Failed to process sections data. Please try again later.");
                 setIsLoading(false);
             }
         };
 
-        fetchData();
-    }, []);
+        convertSectionsToTableData();
+    }, [sections, deptsData, selectedDepartment]);
 
-    // Filter and search effects
     useEffect(() => {
         let results = [...tableData];
 
-        // Department filter
-        if (selectedDepartment) {
+        if (selectedDepartment && selectedDepartment !== "All Departments") {
             results = results.filter(item => item.departmentName === selectedDepartment);
         }
 
-        // Filter by year
         if (selectedYear) {
             results = results.filter(item => item.year === selectedYear);
         }
 
-        // Search text
         if (searchText) {
             const searchLower = searchText.toLowerCase();
             results = results.filter(item =>
                 item.subjectName.toLowerCase().includes(searchLower) ||
+                item.courseCode.toLowerCase().includes(searchLower) ||
                 item.roomNo.toLowerCase().includes(searchLower) ||
-                item.departmentName.toLowerCase().includes(searchLower)
+                item.departmentName.toLowerCase().includes(searchLower) ||
+                item.teachers.toLowerCase().includes(searchLower) ||
+                item.section.toLowerCase().includes(searchLower)
             );
         }
 
         setFilteredData(results);
     }, [tableData, selectedDepartment, selectedYear, searchText]);
 
-    // Handle search input
     const handleSearch = (e) => {
         setSearchText(e.target.value);
     };
 
-    // Modal handlers
-    const openModal = () => {
-        setShowModal(true);
-        setModalDepartment("");
-        setModalRoom("");
-    };
-
-    const closeModal = () => {
-        setShowModal(false);
-        setModalDepartment("");
-        setModalRoom("");
-    };
-
-    const handleSave = () => {
-        // Here you would typically save the data to your backend
-        console.log("Saving:", { department: modalDepartment, room: modalRoom });
-        closeModal();
-    };
-
-    // Subject card component that matches the design
     const SubjectCard = ({ card }) => {
         return (
-            <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "16px 24px",
-                backgroundColor: "#F8F9FA",
-                borderRadius: "12px",
-                marginBottom: "8px",
-                border: "1px solid #E9ECEF"
-            }}>
-                {/* Left Side: Subject Name and Room */}
-                <div style={{ flex: 1 }}>
-                    <div style={{
-                        fontSize: "16px",
-                        fontWeight: "600",
-                        color: "#1F2937",
-                        marginBottom: "4px"
-                    }}>
+            <div style={styles.sectionCard}>
+                {/* Left Side: Subject Name and Details */}
+                <div style={styles.cardLeft}>
+                    <h5 style={styles.cardTitle}>
                         {card.subjectName}
-                    </div>
-                    <div style={{
-                        fontSize: "14px",
-                        color: "#6B7280"
-                    }}>
-                        Room NO {card.roomNo}
+                    </h5>
+                    <p style={styles.cardSubtitle}>
+                        {card.courseCode} - Section {card.section}
+                    </p>
+                    <p style={styles.scheduleText}>
+                        {card.schedule}
+                    </p>
+                    {card.teachers && (
+                        <p style={styles.scheduleText}>
+                            Teacher: {card.teachers}
+                        </p>
+                    )}
+                </div>
+
+                {/* Middle: Avatar Group */}
+                <div style={styles.cardMiddle}>
+                    <div style={styles.avatarGroup}>
+
+                        {/* Show first 5 avatars */}
+                        {card.avatars.slice(0, 5).map((avatar, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    ...styles.avatar,
+                                    marginLeft: i === 0 ? "0" : "-8px",
+                                    backgroundImage: `url(${avatar})`
+                                }}
+                            />
+                        ))}
+
+                        {/* Show +X for remaining participants beyond 5 avatars */}
+                        {card.participants > 5 && (
+                            <div style={styles.avatarExtra}>
+                                +{card.participants - 5}
+                            </div>
+                        )}
+                        <span style={styles.strengthText}>
+                            {card.participants} Students
+                        </span>
                     </div>
                 </div>
 
-                {/* Right Side: Action Button */}
-                <div>
-      <button 
-        onClick={handleClick}
-        style={{ 
-          width: "40px", 
-          height: "40px", 
-          borderRadius: "50%", 
-          backgroundColor: "transparent", 
-          border: "none", 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center", 
-          cursor: "pointer",
-        }}
-      >
-        <img 
-          src="/assets/arrow-right1.png" 
-          alt="Arrow" 
-          width="24" 
-          height="24" 
-        />
-      </button>
-    </div>
-            </div>
-        );
-    };
-
-    // Modal Component
-    const Modal = () => {
-        if (!showModal) return null;
-        
-        return (
-            <div style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1000
-            }}>
-                <div style={{
-                    backgroundColor: "white",
-                    borderRadius: "12px",
-                    padding: "24px",
-                    width: "400px",
-                    maxWidth: "90vw",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
-                }}>
-                    <h3 style={{
-                        fontSize: "18px",
-                        fontWeight: "600",
-                        color: "#1F2937",
-                        marginBottom: "20px",
-                        marginTop: "0"
-                    }}>
-                        Add Room
-                    </h3>
-
-                    {/* Department Dropdown */}
-                    <div style={{ marginBottom: "16px" }}>
-                        <div style={{ position: "relative" }}>
-                            <select
-                                value={modalDepartment}
-                                onChange={(e) => setModalDepartment(e.target.value)}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #D1D5DB",
-                                    borderRadius: "8px",
-                                    fontSize: "14px",
-                                    color: modalDepartment ? "#1F2937" : "#9CA3AF",
-                                    backgroundColor: "white",
-                                    appearance: "none",
-                                    paddingRight: "40px",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                <option value="">Select Department</option>
-                                {departments.map((dept, index) => (
-                                    <option key={index} value={dept}>
-                                        {dept}
-                                    </option>
-                                ))}
-                            </select>
-                            <div style={{
-                                position: "absolute",
-                                right: "12px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                pointerEvents: "none"
-                            }}>
-                                <img src="/assets/arrow-down.png" alt="Dropdown arrow" width="12" height="12" />
-                            </div>
+                {/* Right Side: Room No and Action Buttons */}
+                <div style={styles.cardRight}>
+                    <div>
+                        <div style={styles.roomText}>
+                            Room {card.roomNo}
                         </div>
+                        <p style={styles.scheduleText}>
+                            Status: {card.status}
+                        </p>
                     </div>
-
-                    {/* Room Dropdown */}
-                    <div style={{ marginBottom: "24px" }}>
-                        <div style={{ position: "relative" }}>
-                            <select
-                                value={modalRoom}
-                                onChange={(e) => setModalRoom(e.target.value)}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #D1D5DB",
-                                    borderRadius: "8px",
-                                    fontSize: "14px",
-                                    color: modalRoom ? "#1F2937" : "#9CA3AF",
-                                    backgroundColor: "white",
-                                    appearance: "none",
-                                    paddingRight: "40px",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                <option value="">Select Room</option>
-                                {rooms.map((room, index) => (
-                                    <option key={index} value={room}>
-                                        {room}
-                                    </option>
-                                ))}
-                            </select>
-                            <div style={{
-                                position: "absolute",
-                                right: "12px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                pointerEvents: "none"
-                            }}>
-                                <img src="/assets/arrow-down.png" alt="Dropdown arrow" width="12" height="12" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Buttons */}
-                    <div style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: "12px"
-                    }}>
-                        <button
-                            onClick={closeModal}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: "#EAECF0",
-                                border: "1px solid #EAECF0",
-                                borderRadius: "100px",
-                                fontSize: "18px",
-                                fontWeight: "400",
-                                color: "#667085",
-                                cursor: "pointer"
-                            }}
-                        >
-                            Cancel
+                    <div style={styles.actionButtons}>
+                        <button style={styles.actionButton}>
+                            <img src="/assets/delete.png" alt="Delete" width="20" height="20" />
                         </button>
-                        <button
-                            onClick={handleSave}
-                            style={{
-                                padding: "8px 20px",
-                                backgroundColor: "#8B5CF6",
-                                border: "none",
-                                borderRadius: "100px",
-                                fontSize: "18px",
-                                fontWeight: "500",
-                                color: "white",
-                                cursor: "pointer"
-                            }}
-                        >
-                            Save
+                        <button style={styles.actionButton}>
+                            <img src="/assets/edit.png" alt="Edit" width="20" height="20" />
                         </button>
                     </div>
                 </div>
@@ -390,240 +197,418 @@ function Timetable() {
     };
 
     return (
-        <div style={{ 
-            maxWidth: "100%", 
-            margin: "0 auto", 
-            padding: "20px",
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        }}>
-            {/* Header Section */}
-            <header style={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center", 
-                marginBottom: "24px" 
-            }}>
-                <div>
-                    <h1 style={{ 
-                        fontSize: "24px", 
-                        margin: 0, 
-                        fontWeight: "600", 
-                        color: "#1F2937" 
-                    }}>
-                        Time table
-                    </h1>
-                </div>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                    <img 
-                        src="/assets/avatar.jpeg" 
-                        alt="User Avatar" 
-                        style={{
-                            width: "54px",
-                            height: "54px",
-                            borderRadius: "50%",
-                            marginRight: "12px",
-                            objectFit: "cover"
-                        }}
-                    />
-                    <div>
-                        <div style={{ fontWeight: "500", fontSize: "14px", color: "#1F2937" }}>
-                            Dem Parent Name
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#9CA3AF", fontWeight:'400' }}>
-                            Class VIII
+        <Container fluid className="p-3" style={styles.container}>
+            <main>
+                {/* Header Section */}
+                <header style={styles.header}>
+                    <div style={styles.headerTitle}>
+                        <h1 style={styles.title}>Time table</h1>
+                    </div>
+                    <div style={styles.userInfo}>
+                        <img
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
+                            alt="User"
+                            style={styles.userImage}
+                        />
+                        <div style={styles.userDetails}>
+                            <div style={styles.userName}>
+                                {userData?.full_name || 'User'}
+                            </div>
+                            <div style={styles.userId}>
+                                {userData?.admin_id || userData?.id || 'ID'}
+                            </div>
                         </div>
                     </div>
-                  
-                </div>
-            </header>
+                </header>
 
-            {/* Filter Section */}
-            <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "20px"
-            }}>
-                {/* Left Filters */}
-                <div style={{ display: "flex", gap: "12px" }}>
-                    {/* Department Dropdown */}
-                    <div style={{ position: "relative" }}>
-                        <select
-                            value={selectedDepartment}
-                            onChange={(e) => setSelectedDepartment(e.target.value)}
-                            style={{
-                                padding: "8px 16px",
-                                border: "1px solid #E5E7EB",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                                color: "#111827",
-                                backgroundColor: "white",
-                                appearance: "none",
-                                paddingRight: "32px",
-                                cursor: "pointer"
+                {/* Filter Section */}
+                <div style={styles.filterSection}>
+
+                    {/* Left Filters */}
+                    <div style={styles.leftFilters}>
+
+                        {/* Department Dropdown */}
+                        <div style={styles.dropdown}>
+                            <select
+                                value={selectedDepartment}
+                                onChange={(e) => setSelectedDepartment(e.target.value)}
+                                style={styles.select}
+                            >
+                                <option value="All Departments">All Departments</option>
+                                {(deptsData || []).map((dept, index) => (
+                                    <option key={dept.id || index} value={dept.name}>
+                                        {dept.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Year Dropdown */}
+                        <div style={styles.dropdown}>
+                            <div style={styles.yearDropdown}>
+                                <img src="/assets/calendar5.png" alt="Calendar" width="16" height="16" style={{ marginRight: "8px" }} />
+                                <span>{selectedYear}</span>
+                                <img src="/assets/arrow-down.png" alt="Dropdown arrow" width="12" height="12" style={{ marginLeft: "8px" }} />
+                            </div>
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                style={styles.hiddenSelect}
+                            >
+                                {years.map((year, index) => (
+                                    <option key={index} value={year}>
+                                        {year}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Right Section: Search Bar and Add Button */}
+                    <div style={styles.rightSection}>
+
+                        {/* Search Bar */}
+                        <div style={styles.searchContainer}>
+                            <input
+                                type="text"
+                                placeholder="Search courses, rooms, teachers..."
+                                value={searchText}
+                                onChange={handleSearch}
+                                style={styles.searchInput}
+                            />
+                            <div style={styles.searchIcon}>
+                                <img src="/assets/search-lg.png" alt="Search" width="18" height="18" />
+                            </div>
+                        </div>
+
+                        {/* Add Class Button */}
+                        <button
+                            style={styles.addButton}
+                            onClick={() => navigate('/addclass')}
+                        >
+                            <img src="/assets/plus.png" alt="Add" width="16" height="16" />
+                            Add Class
+                        </button>
+                    </div>
+                </div>
+
+                {/* Loading State */}
+                {isLoading && (
+                    <div style={styles.loadingContainer}>
+                        <Spinner animation="border" role="status" variant="primary">
+                            <span className="visually-hidden">Loading...</span>
+                        </Spinner>
+                        <p style={styles.loadingText}>Loading timetable data...</p>
+                    </div>
+                )}
+
+                {/* Error State */}
+                {error && (
+                    <div style={styles.errorContainer}>
+                        {error}
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {!isLoading && !error && filteredData.length === 0 && (
+                    <div style={styles.emptyContainer}>
+                        <div style={styles.emptyIcon}>
+                            <img src="/assets/calendar-empty.png" alt="Empty calendar" width="24" height="24" />
+                        </div>
+                        <h4 style={styles.emptyTitle}>No classes found</h4>
+                        <p style={styles.emptyText}>
+                            Try adjusting your search or filters to find what you're looking for.
+                        </p>
+                        <button
+                            style={styles.clearButton}
+                            onClick={() => {
+                                setSearchText("");
+                                setSelectedDepartment("");
+                                setSelectedYear("2025");
                             }}
                         >
-                            {departments.map((dept, index) => (
-                                <option key={index} value={dept}>
-                                    {dept}
-                                </option>
-                            ))}
-                        </select>
-                        <div style={{
-                            position: "absolute",
-                            right: "12px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            pointerEvents: "none"
-                        }}>
-                            <img src="/assets/arrow-down.png" alt="Dropdown arrow" width="12" height="8" />
-                        </div>
+                            Clear filters
+                        </button>
                     </div>
-                </div>
+                )}
 
-                {/* Right Section: Search Bar and Add Button */}
-                <div style={{ display: "flex", gap: "12px" }}>
-                    {/* Search Bar */}
-                    <div style={{ position: "relative" }}>
-                        <input
-                            type="text"
-                            placeholder="Search"
-                            value={searchText}
-                            onChange={handleSearch}
-                            style={{
-                                padding: "8px 12px 8px 40px",
-                                border: "1px solid #E5E7EB",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                width: "240px"
-                            }}
-                        />
-                        <div style={{
-                            position: "absolute",
-                            left: "12px",
-                            top: "50%",
-                            transform: "translateY(-50%)"
-                        }}>
-                            <img src="/assets/search-lg.png" alt="Search" width="18" height="18" />
-                        </div>
+                {/* Subject Cards Section */}
+                {!isLoading && !error && filteredData.length > 0 && (
+                    <div style={{ marginTop: "20px" }}>
+                        {filteredData.map((card) => (
+                            <SubjectCard key={card.id} card={card} />
+                        ))}
                     </div>
-
-                    {/* Add Class Button */}
-                    <button
-                        onClick={openModal}
-                        style={{
-                            backgroundColor: "#1F2937",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "8px",
-                            padding: "8px 16px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            cursor: "pointer"
-                        }}
-                    >
-                        <img src="/assets/plus.png" alt="Add" width="16" height="16" style={{ filter: "brightness(0) invert(1)" }} />
-                        Add Class
-                    </button>
-                </div>
-            </div>
-
-            {/* Loading State */}
-            {isLoading && (
-                <div style={{ textAlign: "center", padding: "50px 0" }}>
-                    <div style={{
-                        width: "32px",
-                        height: "32px",
-                        border: "3px solid #f3f3f3",
-                        borderTop: "3px solid #8B5CF6",
-                        borderRadius: "50%",
-                        animation: "spin 1s linear infinite",
-                        margin: "0 auto"
-                    }}></div>
-                    <p style={{ marginTop: "16px", color: "#6B7280" }}>Loading timetable data...</p>
-                </div>
-            )}
-
-            {/* Error State */}
-            {error && (
-                <div style={{
-                    padding: "16px",
-                    backgroundColor: "#FEE2E2",
-                    color: "#B91C1C",
-                    borderRadius: "6px",
-                    margin: "20px 0"
-                }}>
-                    {error}
-                </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && !error && filteredData.length === 0 && (
-                <div style={{ textAlign: "center", padding: "50px 0" }}>
-                    <div style={{
-                        width: "64px",
-                        height: "64px",
-                        backgroundColor: "#F3F4F6",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        margin: "0 auto 16px"
-                    }}>
-                        <img src="/assets/calendar-empty.png" alt="Empty calendar" width="24" height="24" />
-                    </div>
-                    <h4 style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}>
-                        No classes found
-                    </h4>
-                    <p style={{ fontSize: "14px", color: "#6B7280", maxWidth: "300px", margin: "8px auto" }}>
-                        Try adjusting your search or filters to find what you're looking for.
-                    </p>
-                    <button
-                        style={{
-                            padding: "8px 16px",
-                            backgroundColor: "transparent",
-                            border: "1px solid #D1D5DB",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            marginTop: "16px",
-                            cursor: "pointer"
-                        }}
-                        onClick={() => {
-                            setSearchText("");
-                            setSelectedDepartment(departments[0]);
-                            setSelectedYear("2023-2024");
-                        }}
-                    >
-                        Clear filters
-                    </button>
-                </div>
-            )}
-
-            {/* Subject Cards Section */}
-            {!isLoading && !error && filteredData.length > 0 && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                    {filteredData.map((card) => (
-                        <SubjectCard key={card.id} card={card} />
-                    ))}
-                </div>
-            )}
-
-            {/* Modal */}
-            <Modal />
-
-            <style jsx>{`
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `}</style>
-        </div>
+                )}
+            </main>
+        </Container>
     );
 }
+
+const styles = {
+    container: {
+        maxWidth: "100%"
+    },
+    header: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: '20px',
+        width: "100%"
+    },
+    headerTitle: {
+        display: "flex",
+        alignItems: "center"
+    },
+    title: {
+        fontSize: "24px",
+        margin: 0,
+        fontWeight: "600"
+    },
+    userInfo: {
+        display: 'flex',
+        alignItems: 'center'
+    },
+    userImage: {
+        borderRadius: '50%',
+        width: '54px',
+        height: '54px',
+        marginRight: '10px'
+    },
+    userDetails: {
+        marginRight: '10px'
+    },
+    userName: {
+        fontWeight: '500',
+        fontSize: '14px'
+    },
+    userId: {
+        fontSize: '12px',
+        color: '#6c757d'
+    },
+    filterSection: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        margin: "20px 0"
+    },
+    leftFilters: {
+        display: "flex",
+        gap: "12px"
+    },
+    dropdown: {
+        position: "relative"
+    },
+    select: {
+        padding: "8px 16px",
+        border: "1px solid #E5E7EB",
+        borderRadius: "8px",
+        fontSize: "14px",
+        fontWeight: "500",
+        color: "#111827",
+        backgroundColor: "white",
+        appearance: "none",
+        paddingRight: "32px",
+        cursor: "pointer"
+    },
+    yearDropdown: {
+        display: "flex",
+        alignItems: "center",
+        padding: "8px 16px",
+        border: "1px solid #E5E7EB",
+        borderRadius: "8px",
+        fontSize: "14px",
+        fontWeight: "500",
+        color: "#111827",
+        backgroundColor: "white",
+        cursor: "pointer"
+    },
+    hiddenSelect: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        opacity: 0,
+        cursor: "pointer"
+    },
+    rightSection: {
+        display: "flex",
+        gap: "12px"
+    },
+    searchContainer: {
+        position: "relative"
+    },
+    searchInput: {
+        padding: "8px 12px 8px 40px",
+        border: "1px solid #E5E7EB",
+        borderRadius: "8px",
+        fontSize: "14px",
+        width: "240px"
+    },
+    searchIcon: {
+        position: "absolute",
+        left: "12px",
+        top: "47%",
+        transform: "translateY(-50%)"
+    },
+    addButton: {
+        backgroundColor: "#1F2937",
+        color: "#fff",
+        border: "none",
+        borderRadius: "8px",
+        padding: "8px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        fontSize: "14px",
+        fontWeight: "600",
+        cursor: "pointer"
+    },
+    loadingContainer: {
+        textAlign: "center",
+        padding: "50px 0"
+    },
+    loadingText: {
+        marginTop: "16px"
+    },
+    errorContainer: {
+        padding: "16px",
+        backgroundColor: "#FEE2E2",
+        color: "#B91C1C",
+        borderRadius: "6px",
+        margin: "20px 0"
+    },
+    emptyContainer: {
+        textAlign: "center",
+        padding: "50px 0"
+    },
+    emptyIcon: {
+        width: "64px",
+        height: "64px",
+        backgroundColor: "#F3F4F6",
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        margin: "0 auto 16px"
+    },
+    emptyTitle: {
+        fontSize: "18px",
+        fontWeight: "600",
+        color: "#111827"
+    },
+    emptyText: {
+        fontSize: "14px",
+        color: "#6B7280",
+        maxWidth: "300px",
+        margin: "8px auto"
+    },
+    clearButton: {
+        padding: "8px 16px",
+        backgroundColor: "transparent",
+        border: "1px solid #D1D5DB",
+        borderRadius: "6px",
+        fontSize: "14px",
+        fontWeight: "500",
+        marginTop: "16px",
+        cursor: "pointer"
+    },
+    sectionCard: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "20px",
+        border: "1px solid #EAECF0",
+        borderRadius: "12px",
+        width: "100%",
+        marginBottom: "16px"
+    },
+    cardLeft: {
+        width: "33%"
+    },
+    cardTitle: {
+        fontSize: "16px",
+        fontWeight: "600",
+        margin: "0",
+        color: "#111827"
+    },
+    cardSubtitle: {
+        fontSize: "14px",
+        color: "#6B7280",
+        margin: "4px 0 0 0"
+    },
+    cardMiddle: {
+        width: "33%",
+        display: "flex",
+        alignItems: "center"
+    },
+    avatarGroup: {
+        display: "flex",
+        position: "relative",
+        alignItems: "center"
+    },
+    avatar: {
+        width: "24px",
+        height: "24px",
+        borderRadius: "50%",
+        border: "1px solid white",
+        overflow: "hidden",
+        position: "relative",
+        background: "#D9D9D9",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+    },
+    avatarExtra: {
+        width: "24px",
+        height: "24px",
+        borderRadius: "50%",
+        border: "1px solid white",
+        marginLeft: "-8px",
+        backgroundColor: "#D9D9D9",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "10px",
+        fontWeight: "500",
+        color: "#6D7280",
+        zIndex: 0
+    },
+    strengthText: {
+        fontSize: "12px",
+        color: "#98A2B3",
+        marginLeft: "8px",
+        fontWeight: '500'
+    },
+    cardRight: {
+        width: "33%",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+    },
+    roomText: {
+        fontSize: "16px",
+        color: "#000",
+        fontWeight: '600'
+    },
+    actionButtons: {
+        display: "flex",
+        gap: "8px"
+    },
+    actionButton: {
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "4px"
+    },
+    scheduleText: {
+        fontSize: "12px",
+        color: "#6B7280",
+        margin: "2px 0"
+    }
+};
 
 export default Timetable;

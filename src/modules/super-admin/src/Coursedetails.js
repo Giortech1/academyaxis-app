@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Row, Col, Image, Button, Form, Card, ProgressBar } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Link } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 
 // Coursedetails Component
 function Coursedetails() {
+    const { userData } = useContext(UserContext);
     const [isSidebarVisible, setSidebarVisible] = useState(true);
     const navigate = useNavigate(); // Initialize navigate
 
@@ -230,7 +232,7 @@ function Coursedetails() {
                         {/* User Info */}
                         <img
                         id="info-img"
-                            src="/assets/avatar.jpeg" // Replace with your image path
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             style={{
                                 borderRadius: '50%',
@@ -240,8 +242,8 @@ function Coursedetails() {
                             }}
                         />
                         <div style={{ marginRight: '10px' }}>
-                            <div style={{ fontWeight: '500', fontSize: '14' }}>Jhon Deo</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>123456</div>
+                            <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.admin_id}</div>
                         </div>
 
                     </div>

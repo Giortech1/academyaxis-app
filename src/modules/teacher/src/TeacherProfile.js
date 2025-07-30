@@ -84,7 +84,7 @@ const StudentProfileScreen = () => {
     };
     const professionalDetails = {
         department: "Computer Science",
-        employeeId: "1234567",
+        employeeId: "123467",
         yearsOfService: "5 years in department",
     };
 

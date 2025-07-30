@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Container, Row, Col, Form, Image, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 function StudentProfile() {
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Sample student data
   const studentData = {
     firstName: "Muhammad",
@@ -58,42 +60,42 @@ function StudentProfile() {
 
   return (
     <Container fluid className="p-3">
-       {/* Header */}
-       <header className="d-flex justify-content-between align-items-center mb-4" id="syllabusheader">
-          <div className="d-flex align-items-center" style={{ fontSize: '24px', fontWeight: '600' }}>
-              <Image
-                  id="arrow-left"
-                  src="/assets/arrow-left.png"
-                  width={24}
-                  height={24}
-                  className="me-2"
-                  alt="Back Arrow"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => navigate(-1)}
-              />
-              <h4 className=" mb-0" style={{fontSize:'24px', fontWeight:'600'}}>Student Profile</h4>
+      {/* Header */}
+      <header className="d-flex justify-content-between align-items-center mb-4" id="syllabusheader">
+        <div className="d-flex align-items-center" style={{ fontSize: '24px', fontWeight: '600' }}>
+          <Image
+            id="arrow-left"
+            src="/assets/arrow-left.png"
+            width={24}
+            height={24}
+            className="me-2"
+            alt="Back Arrow"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(-1)}
+          />
+          <h4 className=" mb-0" style={{ fontSize: '24px', fontWeight: '600' }}>Student Profile</h4>
+        </div>
+        <div className="d-flex align-items-center" id="exam-avatar">
+          <Image
+            id="info-img"
+            src={userData?.profile_pic || "/assets/avatar.jpeg"}
+            alt="Profile"
+            roundedCircle
+            width={54}
+            height={54}
+            className="me-2"
+          />
+          <div>
+            <div style={{ fontSize: "14px", fontWeight: "500", color: '#1F2937' }}>
+              {userData?.full_name}
+            </div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF", fontWeight: '400' }}>{userData?.admin_id}</div>
           </div>
-          <div className="d-flex align-items-center" id="exam-avatar">
-              <Image
-                  id="info-img"
-                  src="/assets/avatar.jpeg" // Replace with profile avatar image
-                  alt="Profile"
-                  roundedCircle
-                  width={54}
-                  height={54}
-                  className="me-2"
-              />
-              <div>
-                  <div style={{ fontSize: "14px", fontWeight: "500", color: '#1F2937' }}>
-                      Amir Mehmood
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#9CA3AF", fontWeight: '400' }}>14783200</div>
-              </div>
-          </div>
+        </div>
       </header>
-      
+
       {/* Profile Content */}
-      <Container className="profile" style={{maxWidth:'100%'}}>
+      <Container className="profile" style={{ maxWidth: '100%' }}>
         {/* Profile Photo Section */}
         <div className="d-flex flex-column align-items-center mb-4">
           <div
@@ -121,13 +123,13 @@ function StudentProfile() {
               textDecoration: "none",
               fontSize: "16px",
               fontWeight: "500",
-              border:'1px solid #EAECF0', borderRadius:'8px'
+              border: '1px solid #EAECF0', borderRadius: '8px'
             }}
           >
-            <img 
-              src="/assets/editpic.png" 
-              alt="Edit" 
-              style={{ marginRight: "8px", width: "24px", height: "24px" }} 
+            <img
+              src="/assets/editpic.png"
+              alt="Edit"
+              style={{ marginRight: "8px", width: "24px", height: "24px" }}
             />
             Edit photo
           </Button>
@@ -166,27 +168,27 @@ function StudentProfile() {
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label style={labelStyle}>Password</Form.Label>
-                <div style={{ 
+                <div style={{
                   ...fieldStyle,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center"
                 }}>
                   {showPassword ? studentData.actualPassword : studentData.password}
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={togglePasswordVisibility}
-                    style={{ 
-                      background: "none", 
-                      border: "none", 
+                    style={{
+                      background: "none",
+                      border: "none",
                       cursor: "pointer"
                     }}
                   >
-                    <img 
-                      src={showPassword ? "/assets/resetpassword.png" : "/assets/resetpassword.png"} 
-                      alt={showPassword ? "Hide password" : "Show password"} 
-                      width="20" 
-                      height="20" 
+                    <img
+                      src={showPassword ? "/assets/resetpassword.png" : "/assets/resetpassword.png"}
+                      alt={showPassword ? "Hide password" : "Show password"}
+                      width="20"
+                      height="20"
                     />
                   </button>
                 </div>
@@ -272,7 +274,7 @@ function StudentProfile() {
 
           <Form.Group className="mb-4">
             <Form.Label style={labelStyle}>Home Address</Form.Label>
-            <div style={{ 
+            <div style={{
               ...fieldStyle,
               minHeight: "80px"
             }}>
@@ -284,24 +286,24 @@ function StudentProfile() {
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label style={labelStyle}>Pdf file</Form.Label>
-                <div style={{ 
+                <div style={{
                   ...fieldStyle,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center"
                 }}>
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <img 
-                      src="/assets/pdf.png" 
-                      alt="Download" 
-                      style={{ marginRight: "8px", width: "20px", height: "20px" }} 
+                    <img
+                      src="/assets/pdf.png"
+                      alt="Download"
+                      style={{ marginRight: "8px", width: "20px", height: "20px" }}
                     />
                     {studentData.pdfFile}
                   </div>
-                  <img 
-                    src="/assets/eye.png" 
-                    alt="View" 
-                    style={{ width: "20px", height: "20px" }} 
+                  <img
+                    src="/assets/eye.png"
+                    alt="View"
+                    style={{ width: "20px", height: "20px" }}
                   />
                 </div>
               </Form.Group>
@@ -309,24 +311,24 @@ function StudentProfile() {
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label style={labelStyle}>Png file</Form.Label>
-                <div style={{ 
+                <div style={{
                   ...fieldStyle,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center"
                 }}>
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <img 
-                      src="/assets/pdf.png" 
-                      alt="Download" 
-                      style={{ marginRight: "8px", width: "20px", height: "20px" }} 
+                    <img
+                      src="/assets/pdf.png"
+                      alt="Download"
+                      style={{ marginRight: "8px", width: "20px", height: "20px" }}
                     />
                     {studentData.pngFile}
                   </div>
-                  <img 
-                    src="/assets/eye.png" 
-                    alt="View" 
-                    style={{ width: "20px", height: "20px" }} 
+                  <img
+                    src="/assets/eye.png"
+                    alt="View"
+                    style={{ width: "20px", height: "20px" }}
                   />
                 </div>
               </Form.Group>

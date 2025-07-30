@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Row,Image, Col, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useLocation } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 const FeesSlip = () => {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
     const location = useLocation();
     
     // State for dynamic payment data
     const [paymentData, setPaymentData] = useState({
-        paymentID: "#1234569",
+        paymentID: "#123569",
         timeDate: new Date().toLocaleString(),
         paymentMethod: "Card Payment",
-        cardLastFour: "1234567856",
+        cardLastFour: "123467856",
         senderName: "Muhammad Faisal",
         amount: 123330,
         tax: 12,
@@ -79,14 +81,14 @@ const FeesSlip = () => {
                     <div className="d-flex align-items-center">
                         <img
                          id="feeimg"
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             className="rounded-circle me-2"
                             style={{ width: "54px", height: "54px" }}
                         />
                         <div className="me-0">
-                            <div style={{ fontWeight: "500", fontSize: "14px" }}>Mian Hamad Khalil</div>
-                            <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                            <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.student_id}</div>
                         </div>
                     
                     </div>

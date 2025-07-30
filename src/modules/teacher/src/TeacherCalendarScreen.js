@@ -141,7 +141,7 @@ const CalendarScreen = () => {
 
                 <div className="d-flex align-items-center">
                     <img
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="User"
                         className="rounded-circle me-2"
                         style={{ width: "54px", height: "54px" }}

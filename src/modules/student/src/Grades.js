@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Row, Col, Card, Table, Form, Button, Image } from "react-bootstrap";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from "./UserContext";
 
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Grades = () => {
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate();
   const semesterData = [
     { id: 1, name: "Semester 1", date: "25-Sep-2024", status: "Passed" },
@@ -58,7 +60,7 @@ const Grades = () => {
           {/* User Info */}
           <img
             id="info-img"
-            src="/assets/avatar.jpeg" // Replace with your image path
+            src={userData?.profile_pic || "/assets/avatar.jpeg"} // Replace with your image path
             alt="User"
             style={{
               borderRadius: '50%',
@@ -69,8 +71,8 @@ const Grades = () => {
             }}
           />
           <div style={{ marginRight: '10px' }}>
-            <div style={{ fontWeight: '500', fontSize: '14' }}>Mian Hamad Khalil</div>
-            <div style={{ fontSize: '12px', color: '#6c757d' }}>123456</div>
+            <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
+            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.student_id}</div>
           </div>
 
         </div>

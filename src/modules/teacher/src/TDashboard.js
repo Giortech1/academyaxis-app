@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Card, Image, ProgressBar, Table, Button, ListGroup, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,9 +6,130 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from './UserContext';
 
 const Dashboard = () => {
-    const { userData } = useContext(UserContext);
+    const { userData, sections, fetchAnnouncements } = useContext(UserContext);
     const [isMobile, setIsMobile] = useState(false);
     const [courses, setCourses] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [announcements, setAnnouncements] = useState([]);
+
+    useEffect(() => {
+        if (userData) {
+            getDashboardData();
+        }
+    }, [userData]);
+
+    const getDashboardData = async () => {
+        try {
+            const response = await fetchAnnouncements(userData?.teacher_id);
+
+            if (response?.success) {
+                const now = new Date();
+
+                const filteredAndSorted = (response.data || [])
+                    .filter(announcement => {
+                        if (announcement?.createdBy?.id === userData?.teacher_id) return false;
+                        if (!announcement.isScheduled) return true;
+                        const scheduleDate = new Date(announcement.scheduleDateTime);
+                        return scheduleDate <= now;
+                    })
+                    .sort((a, b) => {
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    });
+
+                setAnnouncements(filteredAndSorted);
+            }
+
+
+            console.log('Sections: ', sections);
+            setIsLoading(false);
+        } catch (error) {
+            console.log(error);
+            setIsLoading(false);
+        }
+    };
+
+    const calculateTeacherStats = () => {
+        const teacherSections = sections.filter(section =>
+            section.teacher_ids && section.teacher_ids.includes(userData?.teacher_id)
+        );
+
+        const uniqueCourses = teacherSections.reduce((acc, section) => {
+            if (section.course && !acc.find(course => course.id === section.course.id)) {
+                acc.push(section.course);
+            }
+            return acc;
+        }, []);
+
+        const totalStudents = teacherSections.reduce((total, section) => {
+            return total + (section.student_ids ? section.student_ids.length : 0);
+        }, 0);
+
+        return [
+            {
+                label: 'Total Subjects',
+                value: uniqueCourses.length,
+                icon: '/assets/totalclasses.png',
+                bg: '#F9F5FF',
+            },
+            {
+                label: 'Total Students',
+                value: totalStudents,
+                icon: '/assets/totalstudents.png',
+                bg: '#FFFAEB',
+            },
+        ];
+    };
+
+    const teacherStats = calculateTeacherStats();
+
+    const formatAnnouncements = () => {
+        if (!announcements || announcements.length === 0) {
+            return [
+                {
+                    name: "Arsalan Mushtaq",
+                    message: "This is a demo announcement by teacher for students this is a demo announcement by teacher for students. This is a demo announcement by teacher for students this is a demo announcement by teacher for students",
+                    time: "Thu, 19 Sep 2024 12:40 PM",
+                    profile: "assets/Avatar3.png",
+                    roleIcon: "assets/teacher.png",
+                    role: "Teacher",
+                    thumb: "assets/thumb.png",
+                    options: "assets/dots-vertical.png",
+                },
+                {
+                    name: "Amna Mushtaq",
+                    message: "This is a demo announcement by teacher for students this is a demo announcement by teacher for students. This is a demo announcement by teacher for students this is a demo announcement by teacher for students",
+                    time: "11/9/2024",
+                    profile: "assets/Avatar4.png",
+                    roleIcon: "assets/teacher.png",
+                    role: "Teacher",
+                    thumb: "assets/Group 2.png",
+                    options: "assets/dots-vertical.png",
+                }
+            ];
+        }
+
+        return announcements.map(announcement => ({
+            name: announcement.createdBy?.name || 'Unknown',
+            message: announcement.description,
+            time: new Date(announcement.createdAt).toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }),
+            profile: announcement.createdBy?.profile_pic || "/assets/avatar.jpeg",
+            roleIcon: "/assets/teacher.png",
+            role: announcement.createdBy?.type || 'Admin',
+            thumb: "/assets/thumb.png",
+            options: "/assets/dots-vertical.png",
+            title: announcement.title
+        }));
+    };
+
+    const formattedAnnouncements = formatAnnouncements();
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 700);
@@ -34,17 +154,13 @@ const Dashboard = () => {
         return start;
     });
 
-
-
     const navigateWeek = (direction) => {
         setStartOfWeek((prev) => {
             const newStartOfWeek = new Date(prev.getTime());
             newStartOfWeek.setDate(newStartOfWeek.getDate() + direction * 7);
             return newStartOfWeek;
         });
-
     };
-
 
     const dayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
     startOfWeek.setDate(today.getDate() - dayIndex);
@@ -59,9 +175,6 @@ const Dashboard = () => {
         const period = i < 12 ? "am" : "pm";
         return `${hour}:00 ${period}`;
     });
-
-
-
 
     const events = [
         {
@@ -123,19 +236,17 @@ const Dashboard = () => {
                             style={{
                                 backgroundColor: event.color,
                                 borderRadius: "8px",
-                                height: `${80 * duration - 8}px`, // Adjust height to account for top and bottom spacing
+                                height: `${80 * duration - 8}px`,
                                 position: "absolute",
-                                top: "4px", // Set 4px space at the top
+                                top: "4px",
                                 left: "4px",
                                 right: "4px",
-                                bottom: "4px", // Set 4px space at the bottom
+                                bottom: "4px",
                                 zIndex: 10,
-                                overflow: "hidden", // Ensure no scrolling
+                                overflow: "hidden",
                             }}
-
                         >
                             <div style={{ height: "100%" }}>
-                                {/* Event Title */}
                                 <p
                                     className="d-flex align-items-center mb-1"
                                     style={{
@@ -159,7 +270,6 @@ const Dashboard = () => {
                                     {event.subject}
                                 </p>
 
-                                {/* Room Information */}
                                 <p
                                     className="mb-1"
                                     style={{
@@ -175,7 +285,6 @@ const Dashboard = () => {
                                     {event.room}
                                 </p>
 
-                                {/* Time Range */}
                                 <p
                                     className="mb-1"
                                     style={{
@@ -191,7 +300,6 @@ const Dashboard = () => {
                                     {event.startTime} - {event.endTime}
                                 </p>
 
-                                {/* Teacher Information */}
                                 <p
                                     className="d-flex align-items-center mb-1"
                                     style={{
@@ -215,7 +323,6 @@ const Dashboard = () => {
                                     {event.teacher}
                                 </p>
 
-                                {/* Teacher Label */}
                                 <p
                                     className="d-flex align-items-center mb-0"
                                     style={{
@@ -247,27 +354,13 @@ const Dashboard = () => {
             return null;
         });
     };
-    const teacher = {
-        name: userData?.first_name+' '+userData?.last_name,
-        id: userData?.teacher_id,
-        stats: [
-            {
-                label: 'Total Subjects',
-                value: 5,
-                icon: '/assets/totalclasses.png',
-                bg: '#F9F5FF',
-            },
-            {
-                label: 'Total Students',
-                value: 154,
-                icon: '/assets/totalstudents.png',
-                bg: '#FFFAEB',
-            },
 
-        ],
+    const teacher = {
+        name: userData?.full_name,
+        id: userData?.teacher_id,
+        stats: teacherStats,
     };
 
-    // Attendance Data
     const attendance = {
         present: 10,
         absent: 5,
@@ -285,809 +378,887 @@ const Dashboard = () => {
     const attendancePercentage = Math.round((attendance.present / total) * 100);
 
     return (
-        <Container fluid>
-            <Row className="mt-3">
-
-
-                {/* Main Content */}
-                <Col md={12} className="p-3">
-                    <header
-                        id='dashboardheader'
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            // marginBottom: '20px',
-
-                            paddingtop: '0px',
-                            paddingBottom: '30px',
-                            width: '100%',
-
-                        }}
-                    >
-                        {/* Left side: Arrow and Heading */}
-                        <div id='section1' style={{ display: 'flex', flexDirection: 'column', }}>
-
-                            <h1 style={{ fontSize: '24px', margin: 0, fontWeight: '600', color: '#111827' }}>Dashboard</h1>
-
-                        </div>
-
-
-
-                        {/* Right side: User Info and Dropdown */}
-                        <div id='user-info' style={{ display: 'flex', alignItems: 'center' }}>
-                            {/* User Info */}
-                            <img
-                                id='info-img'
-                                src="/assets/avatar.jpeg" // Replace with your image path
-                                alt="User"
-                                style={{
-                                    borderRadius: '50%',
-                                    width: '54px',
-                                    height: '54px',
-                                    marginRight: '10px',
-
-                                }}
-                            />
-                            <div style={{ marginRight: '10px' }}>
-                                <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.first_name} {userData?.last_name}</div>
-                                <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.teacher_id}</div>
+        <>
+            <Container fluid>
+                <Row className="mt-3">
+                    <Col md={12} className="p-3">
+                        <header id='dashboardheader' className="dashboard-header">
+                            <div id='section1' className="section-title">
+                                <h1 className="main-heading">Dashboard</h1>
                             </div>
-                            <button
-                                style={{
-                                    backgroundColor: 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                }}
-                            >
+
+                            <div id='user-info' className="user-info-section">
                                 <img
-                                    src="/assets/arrow-down.png" // Replace with your dropdown icon
-                                    alt="Dropdown"
-                                    style={{ width: '12px', height: '12px' }}
+                                    id='info-img'
+                                    src={userData?.profile_pic || "/assets/avatar.jpeg"}
+                                    alt="User"
+                                    className="user-avatar"
                                 />
-                            </button>
-                        </div>
-                    </header>
-
-                    <Row id='result-card'>
-                        {/* Result Card */}
-                        <Col md={6}>
-                            <div className="teacher-dashboard px-0 py-0">
-                                {/* Profile Card */}
-                                <Card className="mb-4  " style={{ borderRadius: '12px', border: '1px solid #9747FF', background: '#9747FF' }}>
-                                    <Card.Body className="d-flex align-items-center">
-                                        <Image
-                                            src="/assets/avatar.jpeg" // Replace with real image
-                                            roundedCircle
-                                            style={{ width: '84px', height: '84px', objectFit: 'cover', marginRight: '16px' }}
-                                        />
-                                        <div>
-                                            <p style={{ color: 'white', fontSize: '16px', fontWeight: '500', marginBottom: '0px' }}>Welcome Back!</p>
-                                            <h5 style={{ fontWeight: '600', marginBottom: 0, fontSize: '24px', color: 'white' }}>{teacher.name}</h5>
-                                            <p style={{ fontSize: '16px', fontWeight: '500', color: '#D0D5DD', marginBottom: 0 }}>{teacher.id}</p>
-                                        </div>
-                                    </Card.Body>
-                                </Card>
-
-                                {/* Stat Cards */}
-                                <Row>
-                                    {teacher.stats.map((stat, index) => (
-                                        <Col key={index} xs={12} sm={6} className="mb-4">
-                                            <Card
-                                                style={{
-                                                    borderRadius: '12px',
-                                                    border: '1px solid #EAECF0',
-                                                    backgroundColor: '#fff',
-                                                }}
-                                            >
-                                                <Card.Body className="d-flex align-items-center" style={{ gap: '16px', padding: "30px 34px" }}>
-                                                    <div
-                                                        style={{
-                                                            backgroundColor: stat.bg,
-                                                            borderRadius: '50%',
-                                                            width: '56px',
-                                                            height: '56px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                        }}
-                                                    >
-                                                        <Image src={stat.icon} alt={stat.label} style={{ width: '24px', height: '24px' }} />
-                                                    </div>
-                                                    <div>
-                                                        <h4 style={{ margin: 0, fontWeight: '600', fontSize: '36px' }}>{stat.value}</h4>
-                                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '500', color: '#475467' }}>{stat.label}</p>
-                                                    </div>
-                                                </Card.Body>
-                                            </Card>
-                                        </Col>
-                                    ))}
-                                </Row>
-                                {/* Attendance Section */}
-
-                                <Card className="mb-4" style={{ borderRadius: '22px', border: 'none', backgroundColor: '#F8F8F8' }}>
-                                    <Card.Body className="d-flex justify-content-between align-items-start flex-wrap attendance-section">
-                                        <h5 style={{ fontWeight: '500', fontSize: '24px', marginBottom: '16px', color: '#000' }}>Your Attendance</h5>
-
-                                        <div className="d-flex align-items-center w-100 flex-wrap gap-4 justify-content-between">
-                                            {/* Chart */}
-                                            <div className="attendance-chart">
-                                                <svg viewBox="0 0 36 36" className="circular-chart">
-                                                    <circle
-                                                        cx="18"
-                                                        cy="18"
-                                                        r="15.9155"
-                                                        fill="none"
-                                                        stroke="#E4E4E7"
-                                                        strokeWidth="4.5"
-                                                    />
-                                                    {segments.reduce((acc, segment, index) => {
-                                                        const offset = segments
-                                                            .slice(0, index)
-                                                            .reduce((sum, s) => sum + (s.value / total) * 100, 0);
-                                                        const dash = (segment.value / total) * 100;
-                                                        acc.push(
-                                                            <circle
-                                                                key={segment.label}
-                                                                cx="18"
-                                                                cy="18"
-                                                                r="15.9155"
-                                                                fill="none"
-                                                                stroke={segment.color}
-                                                                strokeWidth="4"
-                                                                strokeDasharray={`${dash} ${100 - dash}`}
-                                                                strokeDashoffset={-offset}
-                                                                transform="rotate(-90 18 18)"
-                                                                strokeLinecap="round"
-                                                            />
-                                                        );
-                                                        return acc;
-                                                    }, [])}
-                                                </svg>
-                                                <div className="attendance-percentage">{attendancePercentage}%</div>
-                                            </div>
-
-                                            {/* Legend */}
-                                            <ul className="attendance-legend mb-0 ms-4">
-                                                {segments.map((s) => (
-                                                    <li key={s.label}>
-                                                        <span style={{ backgroundColor: s.color }}></span>
-                                                        <span className="label-text">{s.label}</span>
-                                                        <span className="value-text">{Math.round((s.value / total) * 100)}%</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </Card.Body>
-                                </Card>
-
-
-
-                                {/* Responsive Fixes */}
-                                <style jsx>{`
-                               .attendance-section {
-  padding: 24px 30px;
-  border-radius: 22px;
-  background-color: #f8f8f8;
-}
-
-.attendance-chart {
-  position: relative;
-  width: 160px;
-  height: 160px;
-}
-
-.circular-chart {
-  width: 100%;
-  height: 100%;
-}
-
-.attendance-percentage {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-weight: 600;
-  font-size: 32px;
-  color: #101828;
-}
-
-.attendance-legend {
-  list-style: none;
-  padding: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: #344054;
-  min-width: 160px;
-//   width: 100%;
-  max-width: 240px;
-}
-
-.attendance-legend li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.attendance-legend li span:first-child {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  margin-right: 8px;
-}
-
-.label-text {
-  flex: 1;
-  margin-left: 8px;
-  color: #000;
-  font-size:18px;
-  font-weight:400;
-}
-
-.value-text {
-  font-weight: 400;
-  color: #101828;
-}
-
-/* Responsive */
-@media (max-width: 576px) {
-  .attendance-section {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .attendance-chart {
-    margin: auto;
-  }
-
-  .attendance-legend {
-    margin-top: 20px;
-    max-width: 100%;
-    text-align: left;
-  }
-}
-
-
-      `}</style>
+                                <div className="user-details">
+                                    <div className="user-name">{userData?.first_name} {userData?.last_name}</div>
+                                    <div className="user-id">{userData?.teacher_id}</div>
+                                </div>
+                                <button className="dropdown-btn">
+                                    <img
+                                        src="/assets/arrow-down.png"
+                                        alt="Dropdown"
+                                        className="dropdown-icon"
+                                    />
+                                </button>
                             </div>
+                        </header>
 
-
-                        </Col>
-
-
-
-
-                        {/* Calendar */}
-                        <Col md={6}>
-                            <Card style={{ border: 'none' }}>
-                                <Card.Body style={{ padding: '0px', border: 'none', borderRadius: '12px' }}>
-                                    <div style={{ border: "1px solid #EAECF0", borderRadius: "12px", height: '100%' }}>
-                                        {/* Header Section */}
-                                        <div
-                                            className="calendar-header"
-                                            style={{
-                                                borderTopLeftRadius: "12px",
-                                                borderTopRightRadius: "12px",
-                                                padding: "10px",
-                                                paddingBottom: '0px'
-                                            }}
-                                        >
-                                            <div className="d-flex justify-content-between align-items-center">
-                                                {/* Left Section */}
-                                                <div className="d-flex align-items-center">
-                                                    {/* Dynamically display current month and year */}
-                                                    <h5 className="mb-0 fw-bold">
-                                                        {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
-                                                    </h5>
-                                                    <Button
-                                                        variant="none"
-                                                        className="ms-1 border-0"
-                                                        onClick={() => navigateWeek(-1)} // Move to the previous week
-                                                    >
-                                                        <img
-                                                            src="/assets/left-arrow.png"
-                                                            alt="Left Arrow"
-                                                            style={{ width: "30px", height: "30px" }}
-                                                        />
-                                                    </Button>
-                                                    <Button
-                                                        variant="none"
-                                                        className="ms-0 border-0"
-                                                        onClick={() => navigateWeek(1)} // Move to the next week
-                                                    >
-                                                        <img
-                                                            src="/assets/right-arrow.png"
-                                                            alt="Right Arrow"
-                                                            style={{ width: "30px", height: "30px" }}
-                                                        />
-                                                    </Button>
-                                                </div>
-
-                                                <div style={{ marginRight: "5px" }}>
-                                                    <Button
-                                                        variant="link"
-                                                        style={{
-                                                            textDecoration: "underline",
-                                                            fontWeight: "500",
-                                                            fontSize: "12px",
-                                                            color: "#111827",
-                                                            padding: "0",
-                                                        }}
-                                                        onClick={() => navigate("/calendar")}
-                                                    >
-                                                        View
-                                                    </Button>
-                                                </div>
-
+                        <Row id='result-card'>
+                            <Col md={6}>
+                                <div className="teacher-dashboard px-0 py-0">
+                                    <Card className="mb-4 welcome-card">
+                                        <Card.Body className="welcome-card-body">
+                                            <Image
+                                                src={userData?.profile_pic || "/assets/avatar.jpeg"}
+                                                roundedCircle
+                                                className="profile-image"
+                                            />
+                                            <div>
+                                                <p className="welcome-text">Welcome Back!</p>
+                                                <h5 className="welcome-name">{teacher.name}</h5>
+                                                <p className="welcome-id">{teacher.id}</p>
                                             </div>
+                                        </Card.Body>
+                                    </Card>
 
-                                            {/* Today Section */}
-                                            <div
-                                                className="text-muted"
-                                                style={{
-                                                    paddingLeft: "16px",
-                                                    fontWeight: "500",
-                                                    color: "#475467",
-                                                }}
-                                            >
-                                                Today
-                                            </div>
-
-                                            {/* Days Header */}
-                                            <div className="days-header">
-                                                <div className="time-placeholder"></div> {/* Placeholder for time column */}
-                                                {weekDates.slice(0, 4).map((date, index) => {
-                                                    // Show only 4 days
-                                                    const isToday = today.toDateString() === date.toDateString(); // Highlight if it's today
-                                                    return (
-                                                        <div key={index} className="day-cell">
-                                                            <p
-                                                                className="date-number"
-                                                                style={{
-                                                                    backgroundColor: isToday ? "#F9F5FF" : "#F2F4F7",
-                                                                    color: isToday ? "#7F56D9" : "#475467",
-                                                                }}
+                                    {/* Stat Cards */}
+                                    {isLoading ? (
+                                        <div className="loading-stats">
+                                            <div className="loading-spinner"></div>
+                                            <p className="loading-stats-text">Loading statistics...</p>
+                                        </div>
+                                    ) : (
+                                        <Row>
+                                            {teacher.stats.map((stat, index) => (
+                                                <Col key={index} xs={12} sm={6} className="mb-4">
+                                                    <Card className="stat-card">
+                                                        <Card.Body className="stat-card-body">
+                                                            <div
+                                                                className="stat-icon"
+                                                                style={{ backgroundColor: stat.bg }}
                                                             >
-                                                                {date.getDate()}
-                                                            </p>
-                                                            <p className="day-text">{days[index]}</p>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
-
-                                        {/* Calendar Grid */}
-                                        <div
-                                            className="calendar-grid-wrapper"
-                                            style={{ borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px", fontSize: '18px', fontWeight: '500', height: 'calc(100% - 80px)' }}
-                                        >
-                                            <div className="calendar-grid">
-                                                {hours.map((hour, index) => (
-                                                    <React.Fragment key={index}>
-                                                        <div className="time-cell">{hour}</div>
-                                                        {weekDates.slice(0, 4).map((date) => ( // Show only 4 days
-                                                            <div key={`${date}-${hour}`} className="grid-cell">
-                                                                {renderEvent(date, hour)}
+                                                                <Image src={stat.icon} alt={stat.label} />
                                                             </div>
-                                                        ))}
-                                                    </React.Fragment>
-                                                ))}
+                                                            <div>
+                                                                <h4 className="stat-value">{stat.value}</h4>
+                                                                <p className="stat-label">{stat.label}</p>
+                                                            </div>
+                                                        </Card.Body>
+                                                    </Card>
+                                                </Col>
+                                            ))}
+                                        </Row>
+                                    )}
+
+                                    {/* Attendance Section - Keep as is */}
+                                    <Card className="mb-4 attendance-card">
+                                        <Card.Body className="d-flex justify-content-between align-items-start flex-wrap attendance-section">
+                                            <h5 className="attendance-title">Your Attendance</h5>
+
+                                            <div className="d-flex align-items-center w-100 flex-wrap gap-4 justify-content-between">
+                                                <div className="attendance-chart">
+                                                    <svg viewBox="0 0 36 36" className="circular-chart">
+                                                        <circle
+                                                            cx="18"
+                                                            cy="18"
+                                                            r="15.9155"
+                                                            fill="none"
+                                                            stroke="#E4E4E7"
+                                                            strokeWidth="4.5"
+                                                        />
+                                                        {segments.reduce((acc, segment, index) => {
+                                                            const offset = segments
+                                                                .slice(0, index)
+                                                                .reduce((sum, s) => sum + (s.value / total) * 100, 0);
+                                                            const dash = (segment.value / total) * 100;
+                                                            acc.push(
+                                                                <circle
+                                                                    key={segment.label}
+                                                                    cx="18"
+                                                                    cy="18"
+                                                                    r="15.9155"
+                                                                    fill="none"
+                                                                    stroke={segment.color}
+                                                                    strokeWidth="4"
+                                                                    strokeDasharray={`${dash} ${100 - dash}`}
+                                                                    strokeDashoffset={-offset}
+                                                                    transform="rotate(-90 18 18)"
+                                                                    strokeLinecap="round"
+                                                                />
+                                                            );
+                                                            return acc;
+                                                        }, [])}
+                                                    </svg>
+                                                    <div className="attendance-percentage">{attendancePercentage}%</div>
+                                                </div>
+
+                                                <ul className="attendance-legend mb-0 ms-4">
+                                                    {segments.map((s) => (
+                                                        <li key={s.label}>
+                                                            <span style={{ backgroundColor: s.color }}></span>
+                                                            <span className="label-text">{s.label}</span>
+                                                            <span className="value-text">{Math.round((s.value / total) * 100)}%</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </Card.Body>
+                                    </Card>
+                                </div>
+                            </Col>
+
+                            {/* Calendar */}
+                            <Col md={6}>
+                                <Card style={{ border: 'none' }}>
+                                    <Card.Body style={{ padding: '0px', border: 'none', borderRadius: '12px' }}>
+                                        <div style={{ border: "1px solid #EAECF0", borderRadius: "12px", height: '100%' }}>
+                                            {/* Header Section */}
+                                            <div
+                                                className="calendar-header"
+                                                style={{
+                                                    borderTopLeftRadius: "12px",
+                                                    borderTopRightRadius: "12px",
+                                                    padding: "10px",
+                                                    paddingBottom: '0px'
+                                                }}
+                                            >
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div className="d-flex align-items-center">
+                                                        <h5 className="mb-0 fw-bold">
+                                                            {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
+                                                        </h5>
+                                                        <Button
+                                                            variant="none"
+                                                            className="ms-1 border-0"
+                                                            onClick={() => navigateWeek(-1)}
+                                                        >
+                                                            <img
+                                                                src="/assets/left-arrow.png"
+                                                                alt="Left Arrow"
+                                                                style={{ width: "30px", height: "30px" }}
+                                                            />
+                                                        </Button>
+                                                        <Button
+                                                            variant="none"
+                                                            className="ms-0 border-0"
+                                                            onClick={() => navigateWeek(1)}
+                                                        >
+                                                            <img
+                                                                src="/assets/right-arrow.png"
+                                                                alt="Right Arrow"
+                                                                style={{ width: "30px", height: "30px" }}
+                                                            />
+                                                        </Button>
+                                                    </div>
+
+                                                    <div style={{ marginRight: "5px" }}>
+                                                        <Button
+                                                            variant="link"
+                                                            style={{
+                                                                textDecoration: "underline",
+                                                                fontWeight: "500",
+                                                                fontSize: "12px",
+                                                                color: "#111827",
+                                                                padding: "0",
+                                                            }}
+                                                            onClick={() => navigate("/calendar")}
+                                                        >
+                                                            View
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                <div
+                                                    className="text-muted"
+                                                    style={{
+                                                        paddingLeft: "16px",
+                                                        fontWeight: "500",
+                                                        color: "#475467",
+                                                    }}
+                                                >
+                                                    Today
+                                                </div>
+
+                                                <div className="days-header">
+                                                    <div className="time-placeholder"></div>
+                                                    {weekDates.slice(0, 4).map((date, index) => {
+                                                        const isToday = today.toDateString() === date.toDateString();
+                                                        return (
+                                                            <div key={index} className="day-cell">
+                                                                <p
+                                                                    className="date-number"
+                                                                    style={{
+                                                                        backgroundColor: isToday ? "#F9F5FF" : "#F2F4F7",
+                                                                        color: isToday ? "#7F56D9" : "#475467",
+                                                                    }}
+                                                                >
+                                                                    {date.getDate()}
+                                                                </p>
+                                                                <p className="day-text">{days[index]}</p>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                className="calendar-grid-wrapper"
+                                                style={{ borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px", fontSize: '18px', fontWeight: '500', height: 'calc(100% - 80px)' }}
+                                            >
+                                                <div className="calendar-grid">
+                                                    {hours.map((hour, index) => (
+                                                        <React.Fragment key={index}>
+                                                            <div className="time-cell">{hour}</div>
+                                                            {weekDates.slice(0, 4).map((date) => (
+                                                                <div key={`${date}-${hour}`} className="grid-cell">
+                                                                    {renderEvent(date, hour)}
+                                                                </div>
+                                                            ))}
+                                                        </React.Fragment>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        </Row>
+
+                        <Row>
+                            <Col md={6}>
+                                <div className="p-3 announcements-container">
+                                    <div className="announcements-header">
+                                        <h5 className="announcements-title">
+                                            News & Announcements
+                                        </h5>
+                                        <button
+                                            className="view-all-btn"
+                                            onClick={() => navigate("/news-and-announcements")}
+                                        >
+                                            View All
+                                        </button>
                                     </div>
 
-                                    {/* Styles */}
-                                    <style>
-                                        {`
-    .calendar-header {
-        position: relative;
-        top: 0;
-        z-index: 20;
-        background-color: #fff;
-        border-bottom: 1px solid #ddd;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .days-header {
-        display: grid;
-        grid-template-columns: 120px repeat(4, 1fr); /* Time column + 4 days */
-        gap: 0;
-        text-align: center;
-    }
-
-    .time-placeholder {
-        width: 100%; /* Placeholder to align days properly */
-    }
-
-    .day-cell {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .date-number {
-        font-size: 14px;
-        font-weight: bold;
-        border-radius: 50%;
-        padding: 8px;
-        margin-bottom: 4px;
-        width: 35px;
-        height: 35px;
-    }
-
-    .day-text {
-        font-size: 16px;
-        font-weight: 500;
-        color: #475467;
-    }
-
-    .calendar-grid-wrapper {
-        overflow-x: auto; /* Allow horizontal scrolling */
-        overflow-y: auto; /* Allow vertical scrolling */
-        max-height: 388px; /* Adjust to fit remaining height */
-    }
-
-    .calendar-grid-wrapper::-webkit-scrollbar {
-        display: none; /* Hide scrollbar for Webkit browsers */
-    }
-
-    .calendar-grid-wrapper {
-        -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
-        scrollbar-width: none; /* Hide scrollbar for Firefox */
-    }
-
-    .calendar-grid {
-        display: grid;
-        grid-template-columns: 120px repeat(4, 1fr); /* Time column + 4 days */
-        grid-auto-rows: 80px;
-        background-color: #fff;
-    }
-
-    .time-cell {
-        background-color: #FFFFFF;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-right: 1px solid #EAECF0;
-        border-bottom: 1px solid #EAECF0;
-        font-size: 18px;
-        font-weight: 500;
-        color: #475467;
-    }
-
-    .grid-cell {
-        background-color: #fff;
-        border: 0.5px solid #EAECF0;
-        position: relative;
-    }
-    `}
-                                    </style>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-
-                    </Row>
-
-
-                    <Row>
-                        <Col md={6} >
-                            <div
-                                className="p-3"
-                                style={{
-                                    border: '1px solid #E5E7EB',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#fff',
-
-                                }}
-                            >
-                                {/* Heading Section */}
-                                <div
-                                    className="d-flex justify-content-between align-items-center"
-                                    style={{ marginBottom: '15px' }}
-                                >
-                                    <h5 style={{ margin: 0, fontWeight: '600', fontSize: '16px', color: '' }}>
-                                        News & Announcements
-                                    </h5>
-                                    <button
-                                        className="btn border-0"
-                                        style={{
-                                            fontSize: "12px",
-                                            padding: "5px 10px",
-                                            textDecoration: "underline",
-                                            background: "transparent",
-                                            borderBottom: "1px solid #000",
-                                            fontWeight: "500",
-                                        }}
-                                        onClick={() => navigate("/news-and-announcements")}
-                                    >
-                                        View All
-                                    </button>
-
-
-
-
-                                </div>
-                                {/* User Info Section */}
-                                <div
-                                    className="d-flex align-items-start"
-                                    style={{
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center', // Ensures vertical alignment
-                                    }}
-                                >
-                                    <div className="d-flex align-items-start">
-                                        <img
-                                            src="assets/Avatar3.png" // Replace with actual profile image URL
-                                            alt="Teacher Profile"
-                                            style={{
-                                                width: '44px',
-                                                height: '44px',
-                                                borderRadius: '50%',
-                                                marginRight: '15px',
-                                            }}
-                                        />
-                                        <div>
-                                            <h6
-                                                style={{
-                                                    margin: 0,
-                                                    fontWeight: 500,
-                                                    fontSize: '14px',
-                                                    paddingTop: '2px',
-                                                }}
-                                            >
-                                                Arsalan Mushtaq
-                                            </h6>
-                                            <span
-                                                style={{
-                                                    display: 'block',
-                                                    color: '#475467',
-                                                    fontSize: '12px',
-                                                    fontWeight: '400',
-                                                }}
-                                            >
-                                                <img
-                                                    src="assets/teacher.png" // Replace with actual profile image URL
-                                                    alt="Teacher Profile"
-                                                    style={{
-                                                        width: '12px',
-                                                        height: '12px',
-                                                        marginRight: '5px',
-                                                    }}
-                                                />
-                                                Teacher
-                                            </span>
+                                    {isLoading ? (
+                                        <div className="loading-announcements">
+                                            <div className="loading-spinner"></div>
+                                            <p className="loading-announcements-text">Loading announcements...</p>
                                         </div>
-                                    </div>
-                                    <img
-                                        src="assets/dots-vertical.png" // Replace with actual dots image URL
-                                        alt="Options"
-                                        style={{
-                                            width: '20px',
-                                            height: '20px',
-                                            cursor: 'pointer', // Optional: Adds a pointer cursor for interactivity
-                                            marginRight: '18px'
-                                        }}
-                                    />
+                                    ) : (
+                                        <>
+                                            {/* First announcement */}
+                                            {formattedAnnouncements.slice(0, 1).map((item, index) => (
+                                                <div key={index} className="announcement-item">
+                                                    <div className="announcement-user-info">
+                                                        <div className="announcement-user-left">
+                                                            <img
+                                                                src={item.profile}
+                                                                alt="Profile"
+                                                                className="announcement-profile"
+                                                            />
+                                                            <div>
+                                                                <h6 className="announcement-name">
+                                                                    {item.name}
+                                                                </h6>
+                                                                <span className="announcement-role">
+                                                                    <img
+                                                                        src={item.roleIcon}
+                                                                        alt="Role Icon"
+                                                                        className="role-icon"
+                                                                    />
+                                                                    {item.role}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="announcement-content">
+                                                        <div className="announcement-text-section">
+                                                            <p className="announcement-message">
+                                                                {item.message}
+                                                            </p>
+                                                        </div>
+                                                        <span className="announcement-time">
+                                                            {item.time}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {formattedAnnouncements.length > 1 && (
+                                                <div className="announcements-divider">
+                                                    <div className="divider-label">
+                                                        <span className="divider-text">
+                                                            Old Announcements
+                                                        </span>
+                                                        <img
+                                                            src="assets/arrow-down2.png"
+                                                            alt="Arrow Down"
+                                                            className="divider-arrow"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Remaining announcements */}
+                                            {formattedAnnouncements.slice(1, 2).map((item, index) => (
+                                                <div key={index + 1} className="announcement-item">
+                                                    <div className="announcement-user-info">
+                                                        <div className="announcement-user-left">
+                                                            <img
+                                                                src={item.profile}
+                                                                alt="Profile"
+                                                                className="announcement-profile"
+                                                            />
+                                                            <div>
+                                                                <h6 className="announcement-name">
+                                                                    {item.name}
+                                                                </h6>
+                                                                <span className="announcement-role">
+                                                                    <img
+                                                                        src={item.roleIcon}
+                                                                        alt="Role Icon"
+                                                                        className="role-icon"
+                                                                    />
+                                                                    {item.role}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="announcement-content">
+                                                        <div className="announcement-text-section">
+                                                            <p className="announcement-message">
+                                                                {item.message}
+                                                            </p>
+                                                        </div>
+                                                        <span className="announcement-time">
+                                                            {item.time}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
                                 </div>
-                                {/* Text Section */}
-                                <div style={{ marginTop: '10px' }}>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'flex-start',
-                                            marginTop: '5px',
-                                            marginBottom: '10px',
-                                        }}
-                                    >
-                                        <p
-                                            style={{
-                                                margin: 0,
-                                                color: '#374151',
-                                                fontSize: '12px',
-                                                fontWeight: '400',
-                                                flex: 1, // Ensures the text takes available space
-                                                flexBasis: '85%', // Explicitly sets the width in a flex container
-                                                maxWidth: '85%', // Ensures it doesn’t exceed 80% of the parent width
+                            </Col>
+                        </Row>
+                    </Col>
+                </Row>
+            </Container>
 
-                                            }}
-                                        >
-                                            This is a demo announcement by teacher for students this is
-                                            a demo announcement by teacher for students. This is a demo announcement by teacher for students this is
-                                            a demo announcement by teacher for students
-                                        </p>
-                                        <img
-                                            src="assets/thumb.png" // Replace with the actual path to your image
-                                            alt="Thumb Icon"
-                                            style={{
-                                                width: '16px',
-                                                height: '16.5px',
-                                                marginRight: '15px', // Adds spacing between text and the image
-                                                alignSelf: 'center', // Centers the image vertically
-                                            }}
-                                        />
-                                    </div>
+            <style jsx>{`
+                .loading-stats {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 60px 20px;
+                }
+                
+                .loading-announcements {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 40px 20px;
+                }
+                
+                .loading-spinner {
+                    width: 40px;
+                    height: 40px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #9747FF;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-bottom: 16px;
+                }
+                
+                .loading-stats-text {
+                    font-size: 14px;
+                    color: #6c757d;
+                    margin: 0;
+                    font-weight: 500;
+                }
+                
+                .loading-announcements-text {
+                    font-size: 14px;
+                    color: #6c757d;
+                    margin: 0;
+                    font-weight: 500;
+                }
+                
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
 
-                                    <span
-                                        style={{
-                                            fontSize: '11px',
-                                            fontWeight: '400',
-                                            color: '#4B5563',
-                                        }}
-                                    >
-                                        Thu, 19 Sep 2024 12:40 PM
-                                    </span>
-                                </div>
-                                <div
-                                    className="d-flex justify-content-center align-items-center mt-2"
-                                    style={{
-                                        borderTop: '1px solid #E5E7EB', // Creates the horizontal border
-                                        position: 'relative', // Allows proper positioning of the text and arrow
-                                        paddingTop: '10px',
-                                    }}
-                                >
-                                    {/* Text and Arrow Section */}
-                                    <div
-                                        style={{
-                                            position: 'absolute', // Positions the text above the border
-                                            top: '-12px', // Adjusts the position of the text to overlap the border
-                                            backgroundColor: '#FFF', // Matches the background color to blend with the container
-                                            padding: '0 12px', // Adds spacing around the text
-                                            display: 'flex', // Aligns text and arrow horizontally
-                                            alignItems: 'center',
-                                            zIndex: 1, // Ensures it stays above the border
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                color: '#9CA3AF', // Gray color for the text
-                                                fontSize: '11px', // Adjusted font size
-                                                fontWeight: '500', // Medium font weight
-                                                marginRight: '8px', // Spacing between text and arrow
-                                            }}
-                                        >
-                                            Old Announcements
-                                        </span>
-                                        <img
-                                            src="assets/arrow-down2.png" // Replace with your arrow image path
-                                            alt="Arrow Down"
-                                            style={{
-                                                width: '16px', // Arrow icon width
-                                                height: '16px', // Arrow icon height
-                                            }}
-                                        />
-                                    </div>
-                                </div>
+                .dashboard-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding-top: 0px;
+                    padding-bottom: 30px;
+                    width: 100%;
+                }
+                
+                .section-title {
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .main-heading {
+                    font-size: 24px;
+                    margin: 0;
+                    font-weight: 600;
+                    color: #111827;
+                }
+                
+                .user-info-section {
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .user-avatar {
+                    border-radius: 50%;
+                    width: 54px;
+                    height: 54px;
+                    margin-right: 10px;
+                }
+                
+                .user-details {
+                    margin-right: 10px;
+                }
+                
+                .user-name {
+                    font-weight: 500;
+                    font-size: 14px;
+                }
+                
+                .user-id {
+                    font-size: 12px;
+                    color: #6c757d;
+                }
+                
+                .dropdown-btn {
+                    background-color: transparent;
+                    border: none;
+                    cursor: pointer;
+                }
+                
+                .dropdown-icon {
+                    width: 12px;
+                    height: 12px;
+                }
+                
+                .welcome-card {
+                    border-radius: 12px;
+                    border: 1px solid #9747FF;
+                    background: #9747FF;
+                }
+                
+                .welcome-card-body {
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .profile-image {
+                    width: 84px;
+                    height: 84px;
+                    object-fit: cover;
+                    margin-right: 16px;
+                }
+                
+                .welcome-text {
+                    color: white;
+                    font-size: 16px;
+                    font-weight: 500;
+                    margin-bottom: 0px;
+                }
+                
+                .welcome-name {
+                    font-weight: 600;
+                    margin-bottom: 0;
+                    font-size: 24px;
+                    color: white;
+                }
+                
+                .welcome-id {
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #D0D5DD;
+                    margin-bottom: 0;
+                }
+                
+                .stat-card {
+                    border-radius: 12px;
+                    border: 1px solid #EAECF0;
+                    background-color: #fff;
+                }
+                
+                .stat-card-body {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 30px 34px;
+                }
+                
+                .stat-icon {
+                    border-radius: 50%;
+                    width: 56px;
+                    height: 56px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .stat-icon img {
+                    width: 24px;
+                    height: 24px;
+                }
+                
+                .stat-value {
+                    margin: 0;
+                    font-weight: 600;
+                    font-size: 36px;
+                }
+                
+                .stat-label {
+                    margin: 0;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #475467;
+                }
+                
+                .attendance-card {
+                    border-radius: 22px;
+                    border: none;
+                    background-color: #F8F8F8;
+                }
+                
+                .attendance-title {
+                    font-weight: 500;
+                    font-size: 24px;
+                    margin-bottom: 16px;
+                    color: #000;
+                }
+                
+                .attendance-section {
+                    padding: 24px 30px;
+                    border-radius: 22px;
+                    background-color: #f8f8f8;
+                }
 
+                .attendance-chart {
+                    position: relative;
+                    width: 160px;
+                    height: 160px;
+                }
 
+                .circular-chart {
+                    width: 100%;
+                    height: 100%;
+                }
 
-                                {/* User Info Section */}
-                                <div
-                                    className="d-flex align-items-start"
-                                    style={{
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center', // Ensures vertical alignment
-                                    }}
-                                >
-                                    <div className="d-flex align-items-start">
-                                        <img
-                                            src="assets/Avatar4.png" // Replace with actual profile image URL
-                                            alt="Teacher Profile"
-                                            style={{
-                                                width: '44px',
-                                                height: '44px',
-                                                borderRadius: '50%',
-                                                marginRight: '15px',
-                                            }}
-                                        />
-                                        <div>
-                                            <h6
-                                                style={{
-                                                    margin: 0,
-                                                    fontWeight: 500,
-                                                    fontSize: '14px',
-                                                    paddingTop: '2px',
-                                                }}
-                                            >
-                                                Amna Mushtaq
-                                            </h6>
-                                            <span
-                                                style={{
-                                                    display: 'block',
-                                                    color: '#475467',
-                                                    fontSize: '12px',
-                                                    fontWeight: '400',
-                                                }}
-                                            >
-                                                <img
-                                                    src="assets/teacher.png" // Replace with actual profile image URL
-                                                    alt="Teacher Profile"
-                                                    style={{
-                                                        width: '12px',
-                                                        height: '12px',
-                                                        marginRight: '5px',
-                                                    }}
-                                                />
-                                                Teacher
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <img
-                                        src="assets/dots-vertical.png" // Replace with actual dots image URL
-                                        alt="Options"
-                                        style={{
-                                            width: '20px',
-                                            height: '20px',
-                                            cursor: 'pointer', // Optional: Adds a pointer cursor for interactivity
-                                            marginRight: '18px'
-                                        }}
-                                    />
-                                </div>
-                                {/* Text Section */}
-                                <div style={{ marginTop: '10px' }}>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'flex-start',
-                                            marginTop: '5px',
-                                            marginBottom: '10px',
-                                        }}
-                                    >
-                                        <p
-                                            style={{
-                                                margin: 0,
-                                                color: '#374151',
-                                                fontSize: '12px',
-                                                fontWeight: '400',
-                                                flex: 1, // Ensures the text takes available space
-                                                flexBasis: '85%', // Explicitly sets the width in a flex container
-                                                maxWidth: '85%', // Ensures it doesn’t exceed 80% of the parent width
+                .attendance-percentage {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-weight: 600;
+                    font-size: 32px;
+                    color: #101828;
+                }
 
-                                            }}
-                                        >
-                                            This is a demo announcement by teacher for students this is
-                                            a demo announcement by teacher for students. This is a demo announcement by teacher for students this is
-                                            a demo announcement by teacher for students
-                                        </p>
-                                        <img
-                                            src="assets/Group 2.png" // Replace with the actual path to your image
-                                            alt="Thumb Icon"
-                                            style={{
-                                                width: '16px',
-                                                height: '16.5px',
-                                                marginRight: '15px', // Adds spacing between text and the image
-                                                alignSelf: 'center', // Centers the image vertically
-                                            }}
-                                        />
-                                    </div>
+                .attendance-legend {
+                    list-style: none;
+                    padding: 0;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #344054;
+                    min-width: 160px;
+                    max-width: 240px;
+                }
 
-                                    <span
-                                        style={{
-                                            fontSize: '11px',
-                                            fontWeight: '400',
-                                            color: '#4B5563',
-                                        }}
-                                    >
-                                        11/9/2024
-                                    </span>
-                                </div>
+                .attendance-legend li {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 12px;
+                }
 
-                            </div>
+                .attendance-legend li span:first-child {
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 4px;
+                    margin-right: 8px;
+                }
 
-                        </Col>
+                .label-text {
+                    flex: 1;
+                    margin-left: 8px;
+                    color: #000;
+                    font-size: 18px;
+                    font-weight: 400;
+                }
 
+                .value-text {
+                    font-weight: 400;
+                    color: #101828;
+                }
 
+                .announcements-container {
+                    border: 1px solid #E5E7EB;
+                    border-radius: 12px;
+                    background-color: #fff;
+                }
+                
+                .announcements-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                }
+                
+                .announcements-title {
+                    margin: 0;
+                    font-weight: 600;
+                    font-size: 16px;
+                }
+                
+                .view-all-btn {
+                    font-size: 12px;
+                    padding: 5px 10px;
+                    text-decoration: underline;
+                    background: transparent;
+                    border-bottom: 1px solid #000;
+                    font-weight: 500;
+                    border: none;
+                }
+                
+                .announcement-item {
+                    margin-bottom: 20px;
+                }
+                
+                .announcement-user-info {
+                    display: flex;
+                    align-items: start;
+                    justify-content: space-between;
+                }
+                
+                .announcement-user-left {
+                    display: flex;
+                    align-items: start;
+                }
+                
+                .announcement-profile {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 50%;
+                    margin-right: 15px;
+                }
+                
+                .announcement-name {
+                    margin: 0;
+                    font-weight: 500;
+                    font-size: 14px;
+                    padding-top: 2px;
+                }
+                
+                .announcement-role {
+                    display: block;
+                    color: #475467;
+                    font-size: 12px;
+                    font-weight: 400;
+                }
+                
+                .role-icon {
+                    width: 12px;
+                    height: 12px;
+                    margin-right: 5px;
+                }
+                
+                .announcement-options {
+                    width: 20px;
+                    height: 20px;
+                    cursor: pointer;
+                    margin-right: 18px;
+                }
+                
+                .announcement-content {
+                    margin-top: 10px;
+                }
+                
+                .announcement-text-section {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-top: 5px;
+                    margin-bottom: 10px;
+                }
+                
+                .announcement-message {
+                    margin: 0;
+                    color: #374151;
+                    font-size: 12px;
+                    font-weight: 400;
+                    flex: 1;
+                    flex-basis: 85%;
+                    max-width: 85%;
+                }
+                
+                .announcement-thumb {
+                    width: 16px;
+                    height: 16.5px;
+                    margin-right: 15px;
+                    align-self: center;
+                }
+                
+                .announcement-time {
+                    font-size: 11px;
+                    font-weight: 400;
+                    color: #4B5563;
+                }
+                
+                .announcements-divider {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-top: 8px;
+                    border-top: 1px solid #E5E7EB;
+                    position: relative;
+                    padding-top: 10px;
+                }
+                
+                .divider-label {
+                    position: absolute;
+                    top: -12px;
+                    background-color: #FFF;
+                    padding: 0 12px;
+                    display: flex;
+                    align-items: center;
+                    z-index: 1;
+                }
+                
+                .divider-text {
+                    color: #9CA3AF;
+                    font-size: 11px;
+                    font-weight: 500;
+                    margin-right: 8px;
+                }
+                
+                .divider-arrow {
+                    width: 16px;
+                    height: 16px;
+                }
 
-                    </Row>
-                </Col>
-            </Row>
+                /* Responsive */
+                @media (max-width: 576px) {
+                    .attendance-section {
+                        flex-direction: column;
+                        text-align: center;
+                    }
 
-        </Container>
+                    .attendance-chart {
+                        margin: auto;
+                    }
+
+                    .attendance-legend {
+                        margin-top: 20px;
+                        max-width: 100%;
+                        text-align: left;
+                    }
+                }
+
+                .calendar-header {
+                    position: relative;
+                    top: 0;
+                    z-index: 20;
+                    background-color: #fff;
+                    border-bottom: 1px solid #ddd;
+                    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+                }
+
+                .days-header {
+                    display: grid;
+                    grid-template-columns: 120px repeat(4, 1fr);
+                    gap: 0;
+                    text-align: center;
+                }
+
+                .time-placeholder {
+                    width: 100%;
+                }
+
+                .day-cell {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                .date-number {
+                    font-size: 14px;
+                    font-weight: bold;
+                    border-radius: 50%;
+                    padding: 8px;
+                    margin-bottom: 4px;
+                    width: 35px;
+                    height: 35px;
+                }
+
+                .day-text {
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #475467;
+                }
+
+                .calendar-grid-wrapper {
+                    overflow-x: auto;
+                    overflow-y: auto;
+                    max-height: 388px;
+                }
+
+                .calendar-grid-wrapper::-webkit-scrollbar {
+                    display: none;
+                }
+
+                .calendar-grid-wrapper {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+
+                .calendar-grid {
+                    display: grid;
+                    grid-template-columns: 120px repeat(4, 1fr);
+                    grid-auto-rows: 80px;
+                    background-color: #fff;
+                }
+
+                .time-cell {
+                    background-color: #FFFFFF;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    border-right: 1px solid #EAECF0;
+                    border-bottom: 1px solid #EAECF0;
+                    font-size: 18px;
+                    font-weight: 500;
+                    color: #475467;
+                }
+
+                .grid-cell {
+                    background-color: #fff;
+                    border: 0.5px solid #EAECF0;
+                    position: relative;
+                }
+            `}</style>
+        </>
     );
 };
 
