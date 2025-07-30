@@ -320,7 +320,7 @@ function AttendanceDetail() {
           {/* Right side: User Info and Dropdown */}
           <div className="header-right">
             <img
-              src="/assets/avatar.jpeg"
+              src={userData?.profile_pic || "/assets/avatar.jpeg"}
               alt="User"
               className="user-avatar"
             />
@@ -331,7 +331,7 @@ function AttendanceDetail() {
                   : "John Doe"}
               </div>
               <div className="user-id">
-                {userData?.teacher_id || "123456"}
+                {userData?.teacher_id}
               </div>
             </div>
             <button className="dropdown-btn">

@@ -1,21 +1,23 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Container, Row, Col, Image, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import { UserContext } from "./UserContext";
 
 const SlipDetails = () => {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
     const location = useLocation();
     const paymentCardRef = useRef(null);
     
     // State for payment data with expanded fields that match the Figma design
     const [paymentData, setPaymentData] = useState({
-        paymentID: "#1234569",
+        paymentID: "#123569",
         timeDate: new Date().toLocaleString(),
         paymentMethod: "Card Payment",
-        cardLastFour: "1234567856",
+        cardLastFour: "7856",
         senderName: "Muhammad Faisal",
         amount: 12300,
         tax: 12,
@@ -125,14 +127,14 @@ const SlipDetails = () => {
                 <div className="d-flex align-items-center">
                     <img
                         id="feeimg"
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="User"
                         className="rounded-circle me-2"
                         style={{ width: "54px", height: "54px" }}
                     />
                     <div className="me-0">
-                        <div style={{ fontWeight: "500", fontSize: "14px" }}>Mian Hamad Khalil</div>
-                        <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                        <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+                        <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.student_id}</div>
                     </div>
                 </div>
             </header>

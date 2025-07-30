@@ -1568,7 +1568,7 @@ function AddStudent() {
                 <div className="d-flex align-items-center" id="exam-avatar">
                     <Image
                         id="info-img"
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="Profile"
                         roundedCircle
                         width={54}
@@ -1579,7 +1579,7 @@ function AddStudent() {
                         <div style={{ fontSize: "14px", fontWeight: "500", color: '#1F2937' }}>
                             {userData?.full_name}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#9CA3AF", fontWeight: '400' }}>{userData?.user_id}</div>
+                        <div style={{ fontSize: "12px", color: "#9CA3AF", fontWeight: '400' }}>{userData?.admin_id}</div>
                     </div>
                 </div>
             </header>

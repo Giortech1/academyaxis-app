@@ -1,548 +1,1079 @@
+/* Dashboard Main Styles */
+.dashboard-content {
+  padding: 20px;
+}
 
-    @media (max-width: 767px) {
-      /* Your styles for mobile view go here */
-      #section1 h1{
-        font-size: 18px !important;
-        font-weight: 500 !important;
-      }
-      #section1 p{
-        font-size: 13px !important;
-      }
-      #info-img{
-        width: 40px !important;
-        height: 40px !important;
-      }
-      #header{
-        flex-direction: row !important;
-        align-items: flex-start !important;
-        gap: 14px;
-        padding: 12px;
-      }
-      #dashboardheader{
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 14px;
-        /* padding: 12px; */
-      }
-      #result-card{
-        gap: 20px !important;
-      }
-      #my-course{
-        padding: 0px !important;
-      }
-      #course-heading{
-        padding: 10px !important;
-        margin-bottom: 0px !important;
-      }
-      #second-header{
-        flex-direction: column !important;
-        gap: 15px;
-        align-items: flex-start !important;
-      }
-      #mon-year{
-        justify-content: space-around;
-      }
-      #search-container{
-        width: auto !important;
-      }
-      #calendar{
-        margin-bottom: 15px;
-      }
-      #calendarscreen{
-        padding: 14px !important;
-      }
-      #assignments{
-        width: 100%;
-        padding: 10px !important;
-      }
-      #assign-table{
-        height: auto !important;
-      }
-      #quizes-page{
-        width: 100%;
-        padding: 10px !important;
-      }
-      #feechallan{
-        padding:12px !important;
-        
-      }
-      #srno{
-        padding-left: 10px !important;
-      }
-      .table>:not(caption)>*>* {
-        padding: 0px !important;
-        /* color: var(--bs-table-color-state, var(--bs-table-color-type, var(--bs-table-color))); */
-        /* background-color: var(--bs-table-bg); */
-        /* border-bottom-width: var(--bs-border-width); */
-        /* box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state, var(--bs-table-bg-type, var(--bs-table-accent-bg))); */
-    }
-    #info-section{
-        width: 100%;
-    }
-    #feechallandetail{
-        width: 100%;
-    }
-    #feeheading{
-        font-size: 18px !important;
-        font-weight: 500 !important;
-    }
-    #feeimg{
-        width: 40px !important;
-        height: 40px !important;
-    }
-    #feeheader{
-        flex-direction: column !important;
-        align-items: flex-start !important;
-    }
-    #feesearch{
-        flex-direction: row-reverse !important;
-        width: 100%;
-    }
-    #name{
-        width: 100%;
-    }
-    #nameinput{
-        width: 80% !important;
-    }
-    #labeldesc{
-        display: flex !important;
-        flex-direction: column !important;
-        width: 100%;
-    }
-    #yourphoto{
-        align-items: flex-start;
-        width: 100%;
-    }
-    #your-bio{
-        width: 100%;
-        flex-direction: column;
-    }
-    #textarea{
-        width: 100% !important;
-    }
-    #contact-email{
-        width: 100% !important;
-     
-    }
-    #form-text{
-        flex-direction: column !important;
-        display: flex;
-    }
-    #calendarsort{
-        width: 100% !important;;
-    }
-    #input-group{
-        width: 100% !important;
-    }
-    #language{
-        width: 100% !important;
-    }
-    #black-theme{
-        width: 100% !important;
-    }
-    #date-format{
-        width: 100% !important;
-    }
-    #settings-heading h2{
-        font-size: 20px !important;
-    }
-    #search-container1{
-        width: 200px !important;
-    }
-    #user-info{
-        width: 100% !important;
-        align-items: flex-end !important;
-        display: flex;
-        justify-content: flex-end;
-    }
-    #news-header{
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 15px;
-    }
-    #news-heading{
-        font-size: 20px !important;
-    }
-    #arrow-left{
-        width: 20px !important;
-        height: 20px !important;
-    }
-    #avatar-img{
-        width: 40px !important;
-        height: 40px !important;
-    }
-   #course-avatars{
-    padding: 5px !important;
-    margin-right: 2px !important;
-   }
-   #mycoursescreen{
-    width: 100% !important;
-   }
-   #mycourse-search{
-    width: 200px !important;
-   
-   
-   }
-   #feechallan h1{
-    font-size: 18px !important;
-    font-weight: 500;
-   }
-   #mycourse h1{
-    font-size: 18px !important;
-    font-weight: 500;
-   }
-   #coursedetailsearch{
-    width:100%;
-   }
-   #coursedetailheader{
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start !important;
-   }
-   #assigntime-left{
-    height: 100% !important;
-   }
-   #coursedetailscreen{
-    width: 100%;
-   }
-   #calenderheading h1{
-    font-size: 18px !important;
-    font-weight: 500 !important;
-   }
-   #mycoursecal{
-    width: 155px;
-   }
-   #assignheading h1{
-    font-size: 18px !important; font-weight: 500;
-   }
-   #mycourse-header{
-    flex-direction: column;
-   }
-   #mycourseform{
-    margin-right: 0px !important;
-   }
-   #examsheading h1{
-    font-size: 18px !important;
-    font-weight: 500 !important;
-   }
+/* Header Styles */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0px;
+  padding-bottom: 10px;
+  width: 100%;
+}
 
-   #search-sort{
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 15px;
-    align-items: flex-end;
-    margin-top: 15px;
-   }
-   
-   #assigndetailpage{
-    width: 100% !important;
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-   }
-   #fileupload{
-    width: 100% !important;
-   }
-   #submitsection{
-    margin-top: 14px !important;
-    margin-bottom: 14px !important;
-   }
-   #gradesheader{
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 15px;
-   }
-   #gradesearch{
-    width: 100%;
-   }
-   #gradeformsearch{
-    width: auto !important;
-   }
-   #gradescontainer{
-    padding: 12px !important;
-   }
-   #gradesheading h1{
-    font-size: 18px !important;
-    font-weight: 500 !important;
-   }
-   #graderow{
-    gap: 20px;
-   }
-   #subgradeheading h1{
-    font-size: 18px !important;
-    font-weight: 500;
-   }
-   #subgrade{
-    padding:10px !important;
-   }
-   #chat-input{
-    margin-bottom: 15px !important;
-    padding: 8px !important;
-    width: 95% !important;
-   }
-   div {
-    overflow-x: auto;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+.header-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-title {
+  font-size: 24px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.current-date {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  border-radius: 50%;
+  width: 54px;
+  height: 54px;
+  margin-right: 10px;
+}
+
+.user-details {
+  margin-right: 10px;
+}
+
+.user-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.user-id {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Card Styles */
+.result-cards-row {
+  margin-top: 20px;
+}
+
+.result-card,
+.attendance-card,
+.quiz-assignment-card,
+.fees-card {
+  margin-bottom: 16px;
+  border: 1px solid #EAECF0;
+  border-radius: 12px;
+  padding: 1px;
+  background-color: #FFFFFF;
+  min-height: 250px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #101828;
+}
+
+/* Result Card */
+.gpa-section,
+.cgpa-section {
+  display: flex;
+  align-items: center;
+}
+
+.gpa-value,
+.cgpa-value {
+  font-size: 36px;
+  font-weight: 600;
+  color: #101828;
+  margin: 0;
+}
+
+.cgpa-value {
+  color: #12B76A;
+}
+
+.gpa-label {
+  font-size: 24px;
+  font-weight: 500;
+  color: #475467;
+  margin-left: 6px;
+  padding-top: 12px;
+  margin-bottom: 0;
+}
+
+.cgpa-label {
+  font-size: 24px;
+  font-weight: 500;
+  color: #12B76A;
+  margin-left: 6px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.comparison-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475467;
+}
+
+.arrow-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.percentage-change {
+  color: #027A48;
+}
+
+.semester-info {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475467;
+}
+
+/* Attendance Card */
+.attendance-percentage {
+  font-size: 48px;
+  font-weight: 600;
+  margin-top: 30px;
+}
+
+.attendance-info {
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  padding-top: 25px;
+}
+
+/* Quiz & Assignment Card */
+.quiz-assignment-title {
+  margin-bottom: 30px;
+}
+
+.progress-section {
+  margin-bottom: 20px;
+}
+
+.assignment-section {
+  padding-top: 30px;
+}
+
+.progress-label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.progress-container {
+  position: relative;
+  height: 8px;
+  border-radius: 6px;
+  background: #E8D4FF;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 6px;
+}
+
+.quiz-progress,
+.assignment-progress {
+  background: linear-gradient(90deg, #A66EFF 0%, #C493FF 100%);
+}
+
+.progress-percentage {
+  position: absolute;
+  bottom: -18px;
+  right: 0;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* Fees Card */
+.challan-info {
+  font-size: 14px;
+  font-weight: 400;
+  color: #4B5563;
+}
+
+.fee-amount {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.currency {
+  font-size: 14px;
+  font-weight: 400;
+  color: #4B5563;
+}
+
+.payment-status {
+  color: black;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.payment-button-container {
+  margin-top: 50px;
+}
+
+.pay-button,
+.paid-button {
+  background-color: black;
+  height: 35px;
+  border: none;
+  display: flex;
+  justify-content: center;
+  margin: auto;
+  border-radius: 12px;
+  width: 80%;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.paid-button {
+  background-color: #6c757d;
+}
+
+.card-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+/* Calendar Card */
+.calendar-card {
+  border: none;
+}
+
+.calendar-body {
+  padding: 0px;
+  border: none;
+  border-radius: 12px;
+}
+
+.calendar-container {
+  border: 1px solid #EAECF0;
+  border-radius: 12px;
+  height: 100%;
+}
+
+.calendar-header {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  padding: 10px;
+  position: relative;
+  top: 0;
+  z-index: 20;
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-title-section {
+  display: flex;
+  align-items: center;
+}
+
+.calendar-month {
+  margin-bottom: 0;
+  font-weight: bold;
+}
+
+.nav-button {
+  background: none;
+  border: none;
+  margin-left: 4px;
+}
+
+.nav-arrow {
+  width: 30px;
+  height: 30px;
+}
+
+.view-link-container {
+  margin-right: 5px;
+}
+
+.view-link {
+  background: none !important;
+  border: none;
+  text-decoration: underline;
+  font-weight: 500;
+  font-size: 12px;
+  color: #111827;
+  padding: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+.view-link:hover,
+.view-link:focus,
+.view-link:active {
+  background: none !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+
+.today-label {
+  padding-left: 16px;
+  font-weight: 500;
+  color: #475467;
+}
+
+.days-header {
+  display: grid;
+  grid-template-columns: 120px repeat(4, 1fr);
+  gap: 0;
+  text-align: center;
+}
+
+.time-placeholder {
+  width: 100%;
+}
+
+.day-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.date-number {
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 8px;
+  margin-bottom: 4px;
+  width: 35px;
+  height: 35px;
+  background-color: #F2F4F7;
+  color: #475467;
+}
+
+.date-number.today {
+  background-color: #F9F5FF;
+  color: #7F56D9;
+}
+
+.day-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #475467;
+}
+
+.calendar-grid-wrapper {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  font-size: 18px;
+  font-weight: 500;
+  height: calc(100% - 80px);
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 350px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.calendar-grid-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: 120px repeat(4, 1fr);
+  grid-auto-rows: 80px;
+  background-color: #fff;
+}
+
+.time-cell {
+  background-color: #FFFFFF;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-right: 1px solid #EAECF0;
+  border-bottom: 1px solid #EAECF0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #475467;
+}
+
+.grid-cell {
+  background-color: #fff;
+  border: 0.5px solid #EAECF0;
+  position: relative;
+}
+
+/* Event Card Styles */
+.event-card {
+  box-shadow: none;
+  border: none;
+}
+
+.event-subject {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-weight: 500;
+}
+
+.event-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.event-room {
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #6c757d;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-weight: 400;
+  padding-bottom: 16px;
+}
+
+.event-time {
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #6c757d;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-weight: 400;
+  padding-bottom: 16px;
+}
+
+.event-teacher {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-weight: 500;
+}
+
+.teacher-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.event-role {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  color: #6c757d;
+  font-weight: 300;
+}
+
+.role-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+/* Bottom Row Styles */
+.bottom-row {
+  margin-top: 20px;
+}
+
+/* News Section */
+.news-container {
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  background-color: #fff;
+  height: 400px;
+  padding: 16px;
+}
+
+.news-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.news-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.view-all-button {
+  font-size: 12px;
+  padding: 5px 10px;
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+  font-weight: 500;
+}
+
+.announcement-item {
+  margin-bottom: 20px;
+}
+
+.announcement-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.author-info {
+  display: flex;
+  align-items: start;
+}
+
+.author-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin-right: 15px;
+}
+
+.author-name {
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+  padding-top: 2px;
+}
+
+.author-role {
+  display: block;
+  color: #475467;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.role-icon-small {
+  width: 12px;
+  height: 12px;
+  margin-right: 5px;
+}
+
+.announcement-content {
+  margin-top: 20px;
+}
+
+.message-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.announcement-message {
+  margin: 0;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 400;
+  flex: 1;
+  flex-basis: 85%;
+  max-width: 85%;
+}
+
+.announcement-time {
+  font-size: 11px;
+  font-weight: 400;
+  color: #4B5563;
+}
+
+.old-announcements-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+  border-top: 1px solid #E5E7EB;
+  position: relative;
+  padding-top: 10px;
+}
+
+.divider-content {
+  position: absolute;
+  top: -12px;
+  background-color: #FFF;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  z-index: 1;
+}
+
+.old-label {
+  color: #9CA3AF;
+  font-size: 11px;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.arrow-down {
+  width: 16px;
+  height: 16px;
+}
+
+/* Tasks Section */
+.tasks-card {
+  border: 1px solid #EAECF0;
+  border-radius: 12px;
+  height: 400px;
+}
+
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tasks-title {
+  margin-bottom: 0;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.tasks-list-container {
+  max-height: 345px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tasks-list-container::-webkit-scrollbar {
+  display: none;
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading-message,
+.no-tasks-message {
+  text-align: center;
+  padding: 10px;
+}
+
+.task-item {
+  border: none;
+  border-radius: 16px;
+  padding: 16px 30px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+}
+
+.task-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.task-code {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.task-details {
+  flex: 1;
+}
+
+.task-title {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #101828;
+}
+
+.task-info {
+  margin-bottom: 0;
+  font-size: 12px;
+  color: #475467;
+  font-weight: 500;
+}
+
+/* Hide scrollbars globally */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 767px) {
+  .dashboard-content {
+    padding: 12px;
   }
-  
-  /* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .welcome-title {
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .current-date {
+    font-size: 13px;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .user-info {
+    width: 100%;
+    align-items: flex-end;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .result-cards-row {
+    gap: 20px;
+  }
+
+  .result-col,
+  .quiz-assignment-col,
+  .calendar-col {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .news-col,
+  .tasks-col {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .news-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .news-title {
+    font-size: 20px;
+  }
+
+  .calendar-month {
+    font-size: 18px;
+  }
+
+  .nav-arrow {
+    width: 20px;
+    height: 20px;
+  }
+
+  .author-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .days-header {
+    grid-template-columns: 80px repeat(4, 1fr);
+  }
+
+  .calendar-grid {
+    grid-template-columns: 80px repeat(4, 1fr);
+  }
+
+  .time-cell {
+    font-size: 12px;
+  }
+
+  .date-number {
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+    padding: 4px;
+  }
+
+  .day-text {
+    font-size: 12px;
+  }
+
+  .calendar-grid-wrapper {
+    max-height: 250px;
+  }
+
+  .news-container {
+    padding: 12px;
+  }
+
+  .tasks-list-container {
+    max-height: 300px;
+  }
+
+  .task-item {
+    padding: 12px 16px;
+  }
+
+  .task-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .task-code {
+    font-size: 16px;
+  }
+
+  /* Global mobile scrollbar hide */
+  div {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
   div::-webkit-scrollbar {
     display: none;
   }
-  #paywithcard{
-    width: 100%;
-  }
-  #examsyllabus h4{
-    font-size:18px !important;
-    font-weight: 500 !important;
-  }
-   #exsyllabus{
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-   
-   }
-   #examsyllabus{
-    align-items: flex-start !important;
-   width: 100%;
-   
-   }
-   #syllabusheader{
-    flex-direction: column;
-    width: 100%;
-    gap: 15px;
-   }
-   #exam-avatar{
-    justify-content: flex-end;
-    width: 100%;
-   }
-      
-      
-    }
-    #responsive{
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-    }
-    @media (min-width: 700px) and (max-width: 900px) {
-        /* Your custom styles for screen widths between 700px and 900px go here */
-        #exams-section1{
-            width: 100% !important;
-            flex-direction: column;
-        }
-        #exam-calendar{
-            flex-direction: row !important;
-            display: flex;
-            justify-content: space-evenly;
-            padding: 16px !important;
-            
-        }
-        #time-left{
-            margin: 0px !important;
-        }
-       
-        
-      }
+}
 
-      @media (min-width: 300px) and (max-width: 700px) {
-        /* Your custom styles for screen widths between 700px and 900px go here */
-        #exams-section1{
-            width: 100% !important;
-            flex-direction: column;
-        }
-        #exam-calendar{
-            flex-direction: column !important;
-            display: flex;
-            justify-content: space-evenly;
-            padding: 16px !important;
-            gap: 15px;
-            
-        }
-        #time-left{
-            margin: 0px !important;
-        }
-        #calendar {
-            width: 100% !important;
-        }
-      }
-
-      @media (max-width: 549px) {
-        /* Your custom styles for very small screens go here */
-        #remaining-cards{
-            flex-direction: column !important;
-            padding-top: 10px !important;
-        }
-        #calendar{
-            width: 100% !important;
-        }
-        #exam-calendar {
-          
-            padding: 0px !important;
-            padding-top: 10px !important;
-            gap: 0px !important;
-        }
-        #labels{
-            width: 85% !important;
-        }
-        #syllabus-cards{
-            flex-direction: column !important;
-            padding: 20px;
-        }
-        #syllabus-data{
-            width: 100% !important;
-            margin-bottom: 15px;
-        }
-      }
-      @media (max-width: 400px) {
-        #small-cards{
-            flex-direction: column !important;
-        }
-        #smallcarddata{
-            width: 100% !important;
-        }
-        #examcardheading{
-            width: 100% !important;
-        }
-       
-      }
-      
-    @media screen and (min-width: 900px) and (max-width: 1150px) {
-        #result-card {
-            flex-wrap: wrap;
-            gap: 16px;
-            justify-content: center;
-        }
-        #assignmentsdetail-screen{
-            padding-right: 5px !important;
-           }
-           
-    
-        #result-card .col-md-3,
-        #result-card .col-md-6 {
-            flex: 0 0 48%;
-            max-width: 48%;
-        }
-        #assigndeatil-time{
-            padding-left:5px !important
-        }
-    
-        #result-card .card {
-            min-width: auto !important;
-            width: 100%;
-        }
-    
-        .calendar-header h5 {
-            font-size: 18px;
-        }
-    
-        .calendar-grid-wrapper {
-            max-height: 300px;
-        }
-    
-        .time-cell {
-            font-size: 16px;
-        }
-    
-        .day-text {
-            font-size: 14px;
-        }
-    
-        .calendar-grid {
-            grid-template-columns: 100px repeat(4, 1fr);
-        }
-    
-        .date-number {
-            width: 30px;
-            height: 30px;
-            font-size: 12px;
-        }
-    
-        .day-text {
-            font-size: 13px;
-        }
-    
-        .calendar-grid-wrapper {
-            font-size: 14px;
-        }
-    }
-    /* CSS for responsiveness from 768px to 1000px */
+/* Tablet Responsiveness (768px - 1000px) */
 @media (min-width: 768px) and (max-width: 1000px) {
-    .header-section {
-      flex-direction: column;
-      align-items: center;
-    }
-  
-    .header-left, .header-right {
-      width: 100%;
-      justify-content: center;
-      margin-bottom: 10px;
-    }
-  
-    .calendar-btn, .timetable-btn, .sort-btn {
-      width: 100%;
-      text-align: center;
-      padding: 8px;
-    }
-  
-    .search-container {
-      width: auto !important;
-    }
-  
-    .search-input {
-      width: 100%;
-      text-align: center;
-    }
-
-
-    .border.rounded.p-3 {
-        height: auto;
-        padding: 1rem;
-      }
-    
-      
-    
-      .d-flex.gap-2 {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-    
-      .table-responsive {
-        overflow-x: auto;
-      }
-    
-      table {
-        font-size: 14px;
-      }
-    
-      th,
-      td {
-        padding: 10px;
-        white-space: nowrap;
-      }
-    
-      .custom-view-button {
-        font-size: 12px !important;
-        padding: 4px 8px !important;
-      }
-    
-     
-    
-      .d-flex.align-items-center.mb-3 h4 {
-        font-size: 18px !important;
-      }
-    
-      .d-flex.align-items-center.mb-3 button {
-        margin-top: 10px;
-      }
-    
-      .d-flex.gap-2.mb-3 {
-        justify-content: flex-start;
-      }
+  .dashboard-header {
+    flex-direction: column;
+    align-items: center;
   }
 
-    
-    
-    
-      
-    
-  
-  
+  .header-section,
+  .user-info {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .result-cards-row {
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .result-col,
+  .quiz-assignment-col {
+    flex: 0 0 48%;
+    max-width: 48%;
+  }
+
+  .calendar-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .calendar-month {
+    font-size: 18px;
+  }
+
+  .calendar-grid-wrapper {
+    max-height: 300px;
+  }
+
+  .time-cell {
+    font-size: 16px;
+  }
+
+  .day-text {
+    font-size: 14px;
+  }
+
+  .calendar-grid {
+    grid-template-columns: 100px repeat(4, 1fr);
+  }
+
+  .date-number {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .news-col,
+  .tasks-col {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+/* Large Tablet/Small Desktop (900px - 1150px) */
+@media screen and (min-width: 900px) and (max-width: 1150px) {
+  .result-cards-row {
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .result-col,
+  .calendar-col {
+    flex: 0 0 48%;
+    max-width: 48%;
+  }
+
+  .quiz-assignment-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .result-card,
+  .attendance-card,
+  .quiz-assignment-card,
+  .fees-card {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .calendar-month {
+    font-size: 18px;
+  }
+
+  .calendar-grid-wrapper {
+    max-height: 300px;
+  }
+
+  .time-cell {
+    font-size: 16px;
+  }
+
+  .day-text {
+    font-size: 14px;
+  }
+
+  .calendar-grid {
+    grid-template-columns: 100px repeat(4, 1fr);
+  }
+
+  .date-number {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .day-text {
+    font-size: 13px;
+  }
+
+  .calendar-grid-wrapper {
+    font-size: 14px;
+  }
+}
+
+/* Medium Mobile (549px and below) */
+@media (max-width: 549px) {
+  .result-cards-row {
+    flex-direction: column;
+    padding-top: 10px;
+  }
+
+  .calendar-container {
+    width: 100%;
+  }
+
+  .bottom-row {
+    padding: 0px;
+    padding-top: 10px;
+    gap: 0px;
+  }
+
+  .news-container,
+  .tasks-card {
+    margin-bottom: 15px;
+  }
+}
+
+/* Small Mobile (400px and below) */
+@media (max-width: 400px) {
+  .result-cards-row {
+    flex-direction: column;
+  }
+
+  .result-col,
+  .quiz-assignment-col,
+  .calendar-col {
+    width: 100%;
+  }
+
+  .welcome-title {
+    font-size: 16px;
+  }
+
+  .user-avatar {
+    width: 35px;
+    height: 35px;
+  }
+
+  .calendar-month {
+    font-size: 16px;
+  }
+
+  .nav-arrow {
+    width: 18px;
+    height: 18px;
+  }
+
+  .task-item {
+    padding: 10px 12px;
+  }
+
+  .task-icon {
+    width: 35px;
+    height: 35px;
+  }
+}

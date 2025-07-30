@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
+import { UserContext } from './UserContext';
 
 const FeesManagement = () => {
+  const { userData } = useContext(UserContext);
     // State for selected filters
     const [department, setDepartment] = useState("Department of Computer Science");
     const [semester, setSemester] = useState("Semester 2");
@@ -171,13 +173,13 @@ const FeesManagement = () => {
                 </div>
                 <div className="user-profile">
                     <img
-                        src="/assets/avatar.png"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="User"
                         className="user-avatar"
                     />
                     <div className="user-info">
-                        <div className="user-name">Zuhran Ahmad</div>
-                        <div className="user-id">14785200</div>
+                        <div className="user-name">{userData?.full_name}</div>
+                        <div className="user-id">{userData?.admin_id}0</div>
                     </div>
                 </div>
             </header>

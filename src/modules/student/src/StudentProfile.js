@@ -164,7 +164,7 @@ const StudentProfileScreen = () => {
                             <p className="text-uppercase text-muted mb-0 custom-label">Academic Year</p>
                             <p className="mb-2 custom-value custom-border">2022-2026</p>
                             <p className="text-uppercase text-muted mb-0 custom-label">Student ID</p>
-                            <p className="mb-2 custom-value custom-border">1234567</p>
+                            <p className="mb-2 custom-value custom-border">123567</p>
                             <p className="text-uppercase text-muted mb-0 custom-label">Email</p>
                             <p className="mb-0 custom-value">Demo@student.edu.com</p>
                         </div>

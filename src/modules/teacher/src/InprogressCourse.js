@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Table, Image, Card, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { UserContext } from "./UserContext";
 
 function EnrollementCourse() {
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -249,7 +251,7 @@ function EnrollementCourse() {
         </div>
         <div className="d-flex align-items-center">
           <img
-            src="/assets/avatar.jpeg"
+            src={userData?.profile_pic || "/assets/avatar.jpeg"}
             alt="User"
             style={{
               borderRadius: '50%',
@@ -259,8 +261,8 @@ function EnrollementCourse() {
             }}
           />
           <div>
-            <div style={{ fontWeight: '500', fontSize: '14px' }}>Mian Hamad Khalil</div>
-            <div style={{ fontSize: '12px', color: '#6c757d' }}>14785200</div>
+            <div style={{ fontWeight: '500', fontSize: '14px' }}>{userData?.full_name}</div>
+            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.teacher_id}</div>
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ const Login = () => {
     const { login } = useContext(UserContext);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        email: "admin@gmail.com",
+        email: "admin1@gmail.com",
         password: "123456",
         rememberMe: true,
     });

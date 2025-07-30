@@ -22,8 +22,8 @@ const FeesChallan = () => {
 
     // Dynamic user details - in a real app, this would be fetched from an API
     const [userDetails, setUserDetails] = useState({
-        name: "Jhon Deo",
-        id: "123456",
+        name: "Jhon Doeo",
+        id: "12456",
         avatar: "/assets/avatar.jpeg",
     });
 
@@ -53,8 +53,8 @@ const FeesChallan = () => {
                 
                 // This would be replaced with actual API data
                 setUserDetails({
-                    name: "Jhon Deo",
-                    id: "123456",
+                    name: "Jhon D0eoo",
+                    id: "12346",
                     avatar: "/assets/avatar.jpeg",
                 });
                 

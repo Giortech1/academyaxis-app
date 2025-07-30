@@ -222,7 +222,7 @@ const AddProgramScreen = () => {
                 </div>
                 <div style={styles.headerRight}>
                     <img
-                        src="/assets/avatar.jpeg"
+                        src={userData?.profile_pic || "/assets/avatar.jpeg"}
                         alt="Profile"
                         style={styles.profileImage}
                     />
@@ -231,7 +231,7 @@ const AddProgramScreen = () => {
                             {userData?.full_name}
                         </div>
                         <div style={styles.profileId}>
-                            {userData?.user_id}
+                            {userData?.admin_id}
                         </div>
                     </div>
                 </div>

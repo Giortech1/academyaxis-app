@@ -268,7 +268,7 @@ const TimeTable = () => {
                 <div style={{ display: 'flex' }}>
                     <div
                         className="timetable-nav-button"
-                        onClick={() => navigate('/student-calendar')}
+                        onClick={() => navigate('/calendarscreen')}
                     >
                         <Image
                             src="/assets/menu-board2.png"

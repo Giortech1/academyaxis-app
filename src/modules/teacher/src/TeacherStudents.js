@@ -190,7 +190,7 @@ function TeacherStudents() {
 
                     <div className="header-right">
                         <img
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             className="user-avatar"
                         />
@@ -201,7 +201,7 @@ function TeacherStudents() {
                                     : "John Doe"}
                             </div>
                             <div className="user-id">
-                                {userData?.teacher_id || "123456"}
+                                {userData?.teacher_id}
                             </div>
                         </div>
                         <button className="dropdown-btn">

@@ -1,16 +1,20 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Table, Button, Image, Form } from "react-bootstrap";
+import { Table, Button, Image, Form, Modal } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { UserContext } from "./UserContext";
+import { toast, ToastContainer } from "react-toastify";
 
 const TeacherQuizzesDetails = () => {
   const { quizId, sectionId } = useParams();
-  const { userData, sections, fetchQuizzes, updateQuizMarks } = useContext(UserContext);
+  const { userData, sections, fetchQuizzes, updateQuizById } = useContext(UserContext);
   const [sectionData, setSectionData] = useState(null);
   const [quizData, setQuizData] = useState(null);
   const [activeButton, setActiveButton] = useState('Overall');
   const [searchTerm, setSearchTerm] = useState('');
-  const [marks, setMarks] = useState({});
+  const [showMarksModal, setShowMarksModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [marksInput, setMarksInput] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
   const navigate = useNavigate();
 
   const spinnerKeyframes = `
@@ -43,10 +47,6 @@ const TeacherQuizzesDetails = () => {
           const matchedQuiz = response?.data.find(quiz => quiz?.id === quizId);
           setQuizData(matchedQuiz);
 
-          if (matchedQuiz?.marks) {
-            setMarks(matchedQuiz.marks);
-          }
-
           console.log('Section: ', matchedSection);
           console.log('Quiz: ', matchedQuiz);
         }
@@ -73,25 +73,117 @@ const TeacherQuizzesDetails = () => {
     color: activeButton === buttonName ? 'white' : '#475467',
   });
 
+  const getStudentSubmission = (studentId) => {
+    return quizData?.submitted?.find(sub => sub.studentId === studentId);
+  };
+
+  const handleDownloadQuiz = (submission) => {
+    if (submission?.downloadURL) {
+        const link = document.createElement('a');
+        link.href = submission.downloadURL;
+        link.download = submission.fileName || 'quiz.pdf';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
+
+  const handleUpdateMarks = async () => {
+    if (!selectedStudent || !marksInput.trim()) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await updateQuizById(
+        sectionId,
+        quizId,
+        selectedStudent.student_id,
+        { marks: parseInt(marksInput) }
+      );
+
+      if (response?.success) {
+        const refreshResponse = await fetchQuizzes(sectionId);
+        if (refreshResponse?.success) {
+          const updatedQuiz = refreshResponse.data.find(quiz => quiz.id === quizId);
+          setQuizData(updatedQuiz);
+        }
+
+        setShowMarksModal(false);
+        setSelectedStudent(null);
+        setMarksInput('');
+        toast.success('Marks updated successfully!');
+      } else {
+        toast.error('Failed to update marks: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error updating marks:', error);
+      toast.error('Error updating marks. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Open marks modal
+  const openMarksModal = (student, submission) => {
+    setSelectedStudent({
+      ...student,
+      submission: submission
+    });
+    setMarksInput(submission?.marks?.toString() || '');
+    setShowMarksModal(true);
+  };
+
   const renderSubmissionStatus = (student, quiz) => {
-    const isSubmitted = quiz?.submitted?.includes(student.id);
+    const submission = getStudentSubmission(student.student_id);
     const currentDate = new Date();
     const endDate = new Date(quiz?.endDate);
-    const isLate = currentDate > endDate && !isSubmitted;
+    const isLate = currentDate > endDate && !submission;
 
-    if (isSubmitted) {
-      return quiz?.endDate ? new Date(quiz.endDate).toLocaleDateString() : "Submitted";
+    if (submission) {
+      const submissionDate = new Date(submission.submittedAt);
+      const wasLate = submissionDate > endDate;
+      return (
+        <div style={{
+          ...styles.statusBadge,
+          backgroundColor: wasLate ? '#FEF2F2' : '#F0FDF4',
+          color: wasLate ? '#DC2626' : '#16A34A'
+        }}>
+          <div style={{
+            ...styles.statusDot,
+            backgroundColor: wasLate ? '#DC2626' : '#16A34A'
+          }}></div>
+          {wasLate ? 'Late Submission' : 'Submitted'}
+        </div>
+      );
     } else if (isLate) {
-      return "Late";
+      return (
+        <div style={{
+          ...styles.statusBadge,
+          backgroundColor: '#FEF2F2',
+          color: '#DC2626'
+        }}>
+          <div style={{ ...styles.statusDot, backgroundColor: '#DC2626' }}></div>
+          Late
+        </div>
+      );
     } else {
-      return "Not Submitted";
+      return (
+        <div style={{
+          ...styles.statusBadge,
+          backgroundColor: '#FEF2F2',
+          color: '#DC2626'
+        }}>
+          <div style={{ ...styles.statusDot, backgroundColor: '#DC2626' }}></div>
+          Not Submitted
+        </div>
+      );
     }
   };
 
   const renderQuizCell = (student, quiz) => {
-    const isSubmitted = quiz?.submitted?.includes(student.id);
+    const submission = getStudentSubmission(student.student_id);
 
-    if (!isSubmitted) {
+    if (!submission) {
       return (
         <div style={styles.notSubmittedBadge}>
           <div style={styles.notSubmittedDot}></div>
@@ -128,53 +220,20 @@ const TeacherQuizzesDetails = () => {
     }
 
     if (activeButton === 'Submitted') {
-      filteredStudents = filteredStudents.filter(student =>
-        quizData.submitted?.includes(student.id)
-      );
+      filteredStudents = filteredStudents.filter(student => {
+        const submission = getStudentSubmission(student.student_id);
+        return submission !== undefined;
+      });
     } else if (activeButton === 'Late Submission') {
       const currentDate = new Date();
       const endDate = new Date(quizData.endDate);
-      filteredStudents = filteredStudents.filter(student =>
-        !quizData.submitted?.includes(student.id) && currentDate > endDate
-      );
+      filteredStudents = filteredStudents.filter(student => {
+        const submission = getStudentSubmission(student.student_id);
+        return !submission && currentDate > endDate;
+      });
     }
 
     return filteredStudents;
-  };
-
-  const handleMarksChange = (studentId, value) => {
-    setMarks(prev => ({
-      ...prev,
-      [studentId]: value
-    }));
-  };
-
-  const handleSaveMarks = async () => {
-    try {
-      const result = await updateQuizMarks(quizId, marks);
-      if (result?.success) {
-        alert('Marks saved successfully!');
-      } else {
-        alert('Failed to save marks');
-      }
-    } catch (error) {
-      console.error('Error saving marks:', error);
-      alert('Error saving marks');
-    }
-  };
-
-  const handleEdit = (studentId) => {
-    document.getElementById(`marks-${studentId}`)?.focus();
-  };
-
-  const handleDelete = (studentId) => {
-    if (window.confirm('Are you sure you want to delete this student\'s marks?')) {
-      setMarks(prev => {
-        const newMarks = { ...prev };
-        delete newMarks[studentId];
-        return newMarks;
-      });
-    }
   };
 
   const LoadingScreen = () => (
@@ -261,7 +320,7 @@ const TeacherQuizzesDetails = () => {
               style={styles.searchInput}
             />
             <Image
-              src="/assets/search-lg.png"
+              src="/assets/search-lg1.png"
               alt="Search Icon"
               width={20}
               height={20}
@@ -270,11 +329,11 @@ const TeacherQuizzesDetails = () => {
           </div>
 
           <Button
-            className="d-flex align-items-center me-3"
+            className="d-flex align-items-center"
             style={styles.sortButton}
           >
             <Image
-              src="/assets/filter-lines.png"
+              src="/assets/filter-lines1.png"
               alt="Sort Icon"
               width={16}
               height={16}
@@ -282,132 +341,129 @@ const TeacherQuizzesDetails = () => {
             />
             Sort
           </Button>
-
-          <Button
-            className="d-flex align-items-center"
-            style={styles.saveButton}
-            onClick={handleSaveMarks}
-          >
-            Save
-          </Button>
         </div>
       </header>
 
-      <div style={{ backgroundColor: "#FFFFFF", borderRadius: "8px" }}>
-        <Table hover style={styles.table}>
-          <thead>
-            <tr style={styles.thead}>
-              <th>Students</th>
-              <th>Student ID</th>
-              <th>Submission Status</th>
-              <th>Deadline</th>
-              <th>Quiz</th>
-              <th>Total Marks</th>
-              <th>Obtained Marks</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStudents.map((student) => {
-              const isSubmitted = quizData.submitted?.includes(student.id);
-              const currentDate = new Date();
-              const endDate = new Date(quizData.endDate);
-              const isLate = currentDate > endDate && !isSubmitted;
+      <Table hover style={styles.table}>
+        <thead>
+          <tr style={styles.thead}>
+            <th>Students</th>
+            <th>Student ID</th>
+            <th>Submission Status</th>
+            <th>Deadline</th>
+            <th>Quiz</th>
+            <th>Marks</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredStudents?.map((student) => {
+            const submission = getStudentSubmission(student.student_id);
 
-              return (
-                <tr key={student.id} style={styles.tableRow}>
-                  <td style={styles.studentCell}>
-                    <img
-                      src={student.profile_pic || "/assets/Avatar3.png"}
-                      alt="Avatar"
-                      style={styles.studentAvatar}
-                    />
-                    {student.full_name}
-                  </td>
-                  <td style={styles.normalText}>{student.student_id}</td>
-                  <td style={styles.normalText}>
-                    {renderSubmissionStatus(student, quizData)}
-                  </td>
-                  <td style={styles.normalText}>
-                    {new Date(quizData.endDate).toLocaleDateString()}
-                  </td>
-                  <td>
-                    {renderQuizCell(student, quizData)}
-                  </td>
-                  <td style={styles.normalText}>
-                    {quizData.totalMarks || 25}
-                  </td>
-                  <td style={styles.normalText}>
-                    {isSubmitted ? (
-                      <input
-                        id={`marks-${student.id}`}
-                        type="number"
-                        value={marks[student.id] || 0}
-                        onChange={(e) => handleMarksChange(student.id, e.target.value)}
-                        style={{
-                          width: '60px',
-                          padding: '4px',
-                          border: '1px solid #D1D5DB',
-                          borderRadius: '4px',
-                          textAlign: 'center'
-                        }}
-                        min="0"
-                        max={quizData.totalMarks || 25}
+            return (
+              <tr key={student?.id} style={styles.tableRow}>
+                <td style={styles.studentCell}>
+                  <img
+                    src={student?.profile_pic || "/assets/Avatar3.png"}
+                    alt="Avatar"
+                    style={styles.studentAvatar}
+                  />
+                  {student?.full_name}
+                </td>
+                <td style={styles.normalText}>{student?.student_id}</td>
+                <td style={styles.normalText}>
+                  {renderSubmissionStatus(student, quizData)}
+                </td>
+                <td style={styles.normalText}>
+                  {new Date(quizData?.endDate).toLocaleDateString()}
+                </td>
+                <td>
+                  {renderQuizCell(student, quizData)}
+                </td>
+                <td style={styles.marksText}>
+                  <span
+                    style={{
+                      ...styles.marksText,
+                      cursor: submission ? 'pointer' : 'default',
+                      textDecoration: submission ? 'underline' : 'none'
+                    }}
+                    onClick={() => submission && openMarksModal(student, submission)}
+                  >
+                    {submission?.marks || (submission ? "0" : "-")}
+                  </span>
+                </td>
+                <td>
+                  <div style={{ alignItems: "center", justifyContent: "center" }}>
+                    <div
+                      style={{
+                        ...styles.actionButton,
+                        cursor: submission ? "pointer" : "not-allowed",
+                        opacity: submission ? 1 : 0.5
+                      }}
+                      onClick={() => submission && handleDownloadQuiz(submission)}
+                    >
+                      <img
+                        src="/assets/import1.png"
+                        alt="View"
+                        style={styles.actionIcon}
                       />
-                    ) : (
-                      <span style={styles.normalText}>-</span>
-                    )}
-                  </td>
-                  <td>
-                    <div style={{ alignItems: "center", justifyContent: "center" }}>
-                      <div className="d-flex align-items-center">
-                        {/* Edit Button */}
-                        <div
-                          style={{
-                            ...styles.actionButton,
-                            marginRight: '5px',
-                            cursor: isSubmitted ? "pointer" : "not-allowed",
-                            opacity: isSubmitted ? 1 : 0.5
-                          }}
-                          onClick={() => isSubmitted && handleEdit(student.id)}
-                        >
-                          <img
-                            src="/assets/edit-2.png"
-                            alt="Edit"
-                            style={styles.actionIcon}
-                          />
-                        </div>
-
-                        {/* Delete Button */}
-                        <div
-                          style={{
-                            ...styles.actionButton,
-                            cursor: isSubmitted ? "pointer" : "not-allowed",
-                            opacity: isSubmitted ? 1 : 0.5
-                          }}
-                          onClick={() => isSubmitted && handleDelete(student.id)}
-                        >
-                          <img
-                            src="/assets/trash.png"
-                            alt="Delete"
-                            style={styles.actionIcon}
-                          />
-                        </div>
-                      </div>
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
 
       {filteredStudents.length === 0 && (
         <div style={{ textAlign: 'center', padding: '20px', color: '#6c757d' }}>
           No students found matching your criteria.
         </div>
       )}
+
+      {/* Marks Update Modal */}
+      <Modal show={showMarksModal} onHide={() => setShowMarksModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Update Marks</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3">
+            <strong>Student:</strong> {selectedStudent?.full_name}
+          </div>
+          <div className="mb-3">
+            <strong>Quiz:</strong> {quizData?.title}
+          </div>
+          <div className="mb-3">
+            <strong>Total Marks:</strong> {quizData?.totalMarks || 100}
+          </div>
+          <Form.Group>
+            <Form.Label>Marks Obtained:</Form.Label>
+            <Form.Control
+              type="number"
+              value={marksInput}
+              onChange={(e) => setMarksInput(e.target.value)}
+              placeholder="Enter marks"
+              min="0"
+              max={quizData?.totalMarks || 100}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowMarksModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleUpdateMarks}
+            disabled={isUpdating || !marksInput.trim()}
+          >
+            {isUpdating ? 'Updating...' : 'Update Marks'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <ToastContainer />
     </div>
   );
 };
@@ -507,17 +563,6 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-  saveButton: {
-    backgroundColor: "#101828",
-    color: "white",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "600",
-    padding: "8px 16px",
-    border: "none",
-    width: '80px',
-    justifyContent: 'center'
-  },
   table: {
     borderCollapse: "collapse",
     width: "100%",
@@ -557,6 +602,22 @@ const styles = {
     fontWeight: '400',
     color: '#4B5563',
     textDecoration: 'underline'
+  },
+  statusBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    borderRadius: '12px',
+    height: '28px',
+    padding: '4px 8px',
+    fontSize: '12px',
+    fontWeight: '500',
+    width: 'fit-content'
+  },
+  statusDot: {
+    width: "6px",
+    height: "6px",
+    borderRadius: "50%"
   },
   notSubmittedBadge: {
     display: "flex",

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Form, Button, Table } from 'react-bootstrap';
+import { UserContext } from './UserContext';
 
 // Mock teachers data 
 const teachersData = [
@@ -177,6 +178,7 @@ const teachersData = [
 ];
 
 const TeachersList = () => {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
 
     // State variables
@@ -266,7 +268,7 @@ const TeachersList = () => {
                         height: '36px'
                     }}>
                         <img
-                            src="/assets/profile.jpg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="Profile"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {
@@ -276,8 +278,8 @@ const TeachersList = () => {
                         />
                     </div>
                     <div>
-                        <div style={{ fontWeight: '500', fontSize: '14px', color: '#1F2937' }}>Mian Hamad Khalil</div>
-                        <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: '400' }}>14785200</div>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: '#1F2937' }}>{userData?.full_name}</div>
+                        <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: '400' }}>{userData?.admin_id}0</div>
                     </div>
                 </div>
             </div>

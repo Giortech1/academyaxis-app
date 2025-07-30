@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Row, Col, Card, Table, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from "./UserContext";
 
 
 const Feechallan = () => {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
 
     const handlePayWithCard = () => {
@@ -30,14 +32,14 @@ const Feechallan = () => {
                     <div className="d-flex align-items-center" id="info-section">
                         <img
                             id="info-img"
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             className="rounded-circle me-2"
                             style={{ width: "54px", height: "54px" }}
                         />
                         <div className="me-2">
-                            <div style={{ fontWeight: "500", fontSize: "14px" }}>Mian hamad khalil</div>
-                            <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                            <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
                         </div>
                         {/* <button className="bg-transparent border-0">
                             <img

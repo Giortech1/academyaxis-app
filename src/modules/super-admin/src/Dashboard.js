@@ -6,21 +6,120 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from './UserContext';
 
 const Dashboard = () => {
-    const { userData } = useContext(UserContext);
+    const { userData, sections, fetchCollection, fetchLatestAnnouncements } = useContext(UserContext);
     const [isMobile, setIsMobile] = useState(false);
-    const [courses, setCourses] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [announcements, setAnnouncements] = useState([]);
+    const [users, setUsers] = useState([]);
     const navigate = useNavigate();
 
-    const sara = {
-        name: "Sara Khan",
-        message: "Important notice for all students: Exams start next week!",
-        time: "Mon, 23 Sep 2024 9:00 AM",
-        profile: "assets/Avatar4.png",
-        roleIcon: "assets/teacher.png",
-        role: "Teacher",
-        thumb: "assets/Group 2.png",
-        options: "assets/dots-vertical.png",
+    useEffect(() => {
+        getDashboardData();
+    }, []);
+
+    const getDashboardData = async () => {
+        try {
+            const response = await fetchLatestAnnouncements(2);
+
+            if (response?.success) {
+                setAnnouncements(response.data || []);
+            }
+
+            const result = await fetchCollection('users');
+            if (result?.success) {
+                setUsers(result.data || []);
+            }
+
+            setIsLoading(false);
+        } catch (error) {
+            console.log(error);
+            setIsLoading(false);
+        }
     };
+
+    const calculateStats = () => {
+        const teachers = users.filter(user => user.role === 'teacher');
+        const students = users.filter(user => user.role === 'student');
+        const admins = users.filter(user => user.role === 'admin' || user.role === 'Administration');
+
+        const uniqueCourses = sections.reduce((acc, section) => {
+            if (section.course && !acc.find(course => course.id === section.course.id)) {
+                acc.push(section.course);
+            }
+            return acc;
+        }, []);
+
+        return [
+            {
+                label: 'Total Teachers',
+                value: teachers.length,
+                icon: '/assets/admin1.png',
+                bg: '#D6BBFB',
+                cardBg: '#F9F5FF',
+            },
+            {
+                label: 'Total Students',
+                value: students.length,
+                icon: '/assets/user-tick.png',
+                bg: '#0160EE',
+                cardBg: '#E1F2FC',
+            },
+            {
+                label: 'Total Admins',
+                value: admins.length,
+                icon: '/assets/user-up-02.png',
+                bg: '#FF5F54',
+                cardBg: '#EFF8F9',
+            },
+            {
+                label: 'Total Classes',
+                value: sections.length,
+                icon: '/assets/material.png',
+                bg: '#B9F2B6',
+                cardBg: '#F2FFF1',
+            },
+            {
+                label: 'Total Courses',
+                value: uniqueCourses.length,
+                icon: '/assets/courses.png',
+                bg: '#FFD88D',
+                cardBg: '#FFF8E7',
+            },
+            {
+                label: 'Total Fees',
+                value: 120,
+                icon: '/assets/manage.png',
+                bg: '#FFC2D1',
+                cardBg: '#FFF0F4',
+            }
+        ];
+    };
+
+    const stats = calculateStats();
+
+    const formatAnnouncements = () => {
+        return announcements.map(announcement => ({
+            name: announcement.createdBy?.name || 'Unknown',
+            message: announcement.description,
+            time: new Date(announcement.createdAt).toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }),
+            profile: announcement.createdBy?.profile_pic || "/assets/avatar.jpeg",
+            roleIcon: "/assets/teacher.png",
+            role: announcement.createdBy?.type || '',
+            thumb: "/assets/thumb.png",
+            options: "/assets/dots-vertical.png",
+            title: announcement.title
+        }));
+    };
+
+    const formattedAnnouncements = formatAnnouncements();
 
     const paymentInfo = {
         amountPaidToday: 145000,
@@ -34,66 +133,6 @@ const Dashboard = () => {
         totalDue: 48000,
     };
 
-    const stats = [
-        {
-            label: 'Total Teachers',
-            value: 469,
-            icon: '/assets/admin1.png',
-            bg: '#D6BBFB',
-            cardBg: '#F9F5FF',
-        },
-        {
-            label: 'Total Students',
-            value: 412,
-            icon: '/assets/user-tick.png',
-            bg: '#0160EE',
-            cardBg: '#E1F2FC',
-        },
-        {
-            label: 'Total Admins',
-            value: 469,
-            icon: '/assets/user-up-02.png',
-            bg: '#FF5F54',
-            cardBg: '#EFF8F9',
-        },
-        {
-            label: 'Total Classes',
-            value: 469,
-            icon: '/assets/material.png',
-            bg: '#B9F2B6',
-            cardBg: '#F2FFF1',
-        },
-        {
-            label: 'Total Courses',
-            value: 58,
-            icon: '/assets/courses.png',
-            bg: '#FFD88D',
-            cardBg: '#FFF8E7',
-        },
-        {
-            label: 'Total Fees',
-            value: 120,
-            icon: '/assets/manage.png',
-            bg: '#FFC2D1',
-            cardBg: '#FFF0F4',
-        }
-    ];
-
-    const announcements = [
-        {
-            name: "Arsalan Mushtaq",
-            message:
-                "This is a demo announcement by teacher for students this is a demo announcement by teacher for students. This is a demo announcement by teacher for students this is a demo announcement by teacher for students",
-            time: "Thu, 19 Sep 2024 12:40 PM",
-            profile: "assets/Avatar3.png",
-            roleIcon: "assets/teacher.png",
-            role: "Teacher",
-            thumb: "assets/thumb.png",
-            options: "assets/dots-vertical.png",
-        },
-
-    ];
-
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 700);
         handleResize();
@@ -106,558 +145,828 @@ const Dashboard = () => {
     };
 
     return (
-        <Container fluid>
-            <Row className="mt-0">
-                {/* Main Content */}
-                <Col md={12} className="p-3">
-                    <header
-                        id='dashboardheader'
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '20px',
-                            width: '100%',
-                        }}
-                    >
-                        {/* Left side: Arrow and Heading */}
-                        <div id='section1' style={{ display: 'flex', flexDirection: 'column', }}>
-
-                            <h1 style={{ fontSize: '24px', margin: 0, fontWeight: '600' }}>Dashboard</h1>
-                        </div>
-
-                        {/* Right side: User Info and Dropdown */}
-                        <div id='user-info' style={{ display: 'flex', alignItems: 'center' }}>
-                            {/* User Info */}
-                            <img
-                                id='info-img'
-                                src="/assets/avatar.jpeg"
-                                alt="User"
-                                style={{
-                                    borderRadius: '50%',
-                                    width: '54px',
-                                    height: '54px',
-                                    marginRight: '10px',
-
-                                }}
-                            />
-                            <div style={{ marginRight: '10px' }}>
-                                <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
-                                <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.user_id}</div>
+        <>
+            <Container fluid>
+                <Row className="mt-0">
+                    {/* Main Content */}
+                    <Col md={12} className="p-3">
+                        <header id='dashboardheader' className="dashboard-header">
+                            {/* Left side: Arrow and Heading */}
+                            <div id='section1' className="section-title">
+                                <h1 className="main-heading">Dashboard</h1>
                             </div>
-                        </div>
-                    </header>
 
-                    <Row id='result-card'>
-                        {/* Result Card */}
-                        <Col md={6}>
-                            <div className="teacher-dashboard px-0 py-0">
-                                <Card className="mb-4" style={{ borderRadius: '12px', border: '1px solid #9747FF', background: '#9747FF' }}>
-                                    <Card.Body className="d-flex align-items-center justify-content-between">
-                                        {/* Left side: Profile Info */}
-                                        <div className="d-flex align-items-center">
-                                            <Image
-                                                src="/assets/avatar.jpeg"
-                                                roundedCircle
-                                                style={{ width: '84px', height: '84px', objectFit: 'cover', marginRight: '16px' }}
-                                            />
-                                            <div>
-                                                <p style={{ color: 'white', fontSize: '16px', fontWeight: '500', marginBottom: '0px' }}>
-                                                    Welcome Back!
-                                                </p>
-                                                <h5 style={{ fontWeight: '600', marginBottom: 0, fontSize: '24px', color: 'white' }}>
-                                                   {userData?.full_name}
-                                                </h5>
-                                                <p style={{ fontSize: '16px', fontWeight: '500', color: '#D0D5DD', marginBottom: 0 }}>
-                                                    {userData?.user_id}
-                                                </p>
-                                            </div>
-                                        </div>
-
-
-
-                                    </Card.Body>
-                                </Card>
-                                <div style={{ border: '1px solid #EAECF0', borderRadius: '12px', padding: '16px' }}>
-                                    {/* Section Heading and Date */}
-                                    <div style={{ marginBottom: '24px' }}>
-                                        <h3 style={{ fontWeight: '600', fontSize: '16px', color: '#000' }}>Today's Attendance</h3>
-                                        <p style={{ fontSize: '12px', color: '#374151', fontWeight: '400' }}>26 May 2025</p>
-                                    </div>
-
-                                    <Row className="g-4">
-                                        {stats.map((stat, index) => (
-                                            <Col key={index} xs={12} sm={6} md={4} lg={4} className="mb-0">
-                                                <Card
-                                                    style={{
-                                                        borderRadius: '12px',
-                                                        border: 'none',
-                                                        backgroundColor: stat.cardBg,
-                                                        cursor: 'pointer',
-                                                    }}
-                                                    onClick={() => {
-                                                        if (stat.label === 'Total Subjects') {
-                                                            navigate("/mycourse");
-                                                        }
-                                                    }}
-                                                >
-                                                    <Card.Body
-                                                        className="d-flex flex-column"
-                                                        style={{ gap: '16px', padding: '24px 28px', textAlign: 'left' }}
-                                                    >
-                                                        {/* Icon with background */}
-                                                        <div
-                                                            style={{
-                                                                backgroundColor: stat.bg,
-                                                                borderRadius: '50%',
-                                                                width: '36px',
-                                                                height: '36px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                marginBottom: '16px',
-                                                            }}
-                                                        >
-                                                            <Image src={stat.icon} alt={stat.label} style={{ width: '24px', height: '24px' }} />
-                                                        </div>
-
-                                                        {/* Label and Value */}
-                                                        <div>
-                                                            <h4 style={{ margin: 0, fontWeight: '500', fontSize: '32px' }}>
-                                                                {stat.value}
-                                                            </h4>
-                                                            <p style={{ margin: 0, fontSize: '12px', fontWeight: '500', color: '#667085' }}>
-                                                                {stat.label}
-                                                            </p>
-                                                        </div>
-                                                    </Card.Body>
-                                                </Card>
-                                            </Col>
-                                        ))}
-                                    </Row>
+                            {/* Right side: User Info and Dropdown */}
+                            <div id='user-info' className="user-info-section">
+                                {/* User Info */}
+                                <img
+                                    id='info-img'
+                                    src={userData?.profile_pic || "/assets/avatar.jpeg"}
+                                    alt="User"
+                                    className="user-avatar"
+                                />
+                                <div className="user-details">
+                                    <div className="user-name">{userData?.full_name}</div>
+                                    <div className="user-id">{userData?.admin_id}</div>
                                 </div>
                             </div>
-                        </Col>
+                        </header>
 
-                        <Col md={6} >
-                            <div
-                                className="p-3"
-                                style={{
-                                    border: '1px solid #E5E7EB',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#fff',
-                                    marginBottom: '20px'
+                        <Row id='result-card'>
+                            {/* Result Card */}
+                            <Col md={6}>
+                                <div className="teacher-dashboard px-0 py-0">
+                                    <Card className="mb-4 welcome-card">
+                                        <Card.Body className="welcome-card-body">
+                                            {/* Left side: Profile Info */}
+                                            <div className="profile-info">
+                                                <Image
+                                                    src={userData?.profile_pic || "/assets/avatar.jpeg"}
+                                                    roundedCircle
+                                                    className="profile-image"
+                                                />
+                                                <div>
+                                                    <p className="welcome-text">
+                                                        Welcome Back!
+                                                    </p>
+                                                    <h5 className="welcome-name">
+                                                        {userData?.full_name}
+                                                    </h5>
+                                                    <p className="welcome-id">
+                                                        {userData?.admin_id}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </Card.Body>
+                                    </Card>
+                                    <div className="attendance-container">
+                                        {/* Section Heading and Date */}
+                                        <div className="attendance-header">
+                                            <h3 className="attendance-title">Today's Statistics</h3>
+                                            <p className="attendance-date">
+                                                {new Date().toLocaleDateString('en-US', {
+                                                    day: '2-digit',
+                                                    month: 'long',
+                                                    year: 'numeric'
+                                                })}
+                                            </p>
+                                        </div>
 
-                                }}
-                            >
-                                {/* Heading Section */}
-                                <div>
-                                    <div
-                                        className="d-flex justify-content-between align-items-center"
-                                        style={{ marginBottom: '15px' }}
-                                    >
-                                        <h5 style={{ margin: 0, fontWeight: '600', fontSize: '16px' }}>
-                                            News & Announcements
-                                        </h5>
+                                        {isLoading ? (
+                                            <div className="loading-stats">
+                                                <div className="loading-spinner"></div>
+                                                <p className="loading-stats-text">Loading statistics...</p>
+                                            </div>
+                                        ) : (
+                                            <Row className="g-4">
+                                                {stats.map((stat, index) => (
+                                                    <Col key={index} xs={12} sm={6} md={4} lg={4} className="mb-0">
+                                                        <Card
+                                                            className="stat-card"
+                                                            style={{ backgroundColor: stat.cardBg }}
+                                                            onClick={() => {
+                                                                if (stat.label === 'Total Subjects') {
+                                                                    navigate("/mycourse");
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Card.Body className="stat-card-body">
+                                                                {/* Icon with background */}
+                                                                <div
+                                                                    className="stat-icon"
+                                                                    style={{ backgroundColor: stat.bg }}
+                                                                >
+                                                                    <Image src={stat.icon} alt={stat.label} />
+                                                                </div>
+
+                                                                {/* Label and Value */}
+                                                                <div>
+                                                                    <h4 className="stat-value">
+                                                                        {stat.value}
+                                                                    </h4>
+                                                                    <p className="stat-label">
+                                                                        {stat.label}
+                                                                    </p>
+                                                                </div>
+                                                            </Card.Body>
+                                                        </Card>
+                                                    </Col>
+                                                ))}
+                                            </Row>
+                                        )}
+                                    </div>
+                                </div>
+                            </Col>
+
+                            <Col md={6}>
+                                <div className="p-3 announcements-container">
+                                    {/* Heading Section */}
+                                    <div>
+                                        <div className="announcements-header">
+                                            <h5 className="announcements-title">
+                                                News & Announcements
+                                            </h5>
+                                            <button
+                                                className="view-all-btn"
+                                                onClick={() => navigate("/news-and-announcements")}
+                                            >
+                                                View All
+                                            </button>
+                                        </div>
+
+                                        {isLoading ? (
+                                            <div className="loading-announcements">
+                                                <div className="loading-spinner"></div>
+                                                <p className="loading-announcements-text">Loading announcements...</p>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* Loop through real announcements */}
+                                                {formattedAnnouncements.slice(0, 1).map((item, index) => (
+                                                    <div key={index} className="announcement-item">
+                                                        {/* User Info Section */}
+                                                        <div className="announcement-user-info">
+                                                            <div className="announcement-user-left">
+                                                                <img
+                                                                    src={item.profile}
+                                                                    alt="Profile"
+                                                                    className="announcement-profile"
+                                                                />
+                                                                <div>
+                                                                    <h6 className="announcement-name">
+                                                                        {item.name}
+                                                                    </h6>
+                                                                    <span className="announcement-role">
+                                                                        <img
+                                                                            src={item.roleIcon}
+                                                                            alt="Role Icon"
+                                                                            className="role-icon"
+                                                                        />
+                                                                        {item.role}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <img
+                                                                src={item.options}
+                                                                alt="Options"
+                                                                className="announcement-options"
+                                                            />
+                                                        </div>
+
+                                                        {/* Text Section */}
+                                                        <div className="announcement-content">
+                                                            <div className="announcement-text-section">
+                                                                <p className="announcement-message">
+                                                                    {item.message}
+                                                                </p>
+                                                            </div>
+                                                            <span className="announcement-time">
+                                                                {item.time}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                {/* Border with Label */}
+                                                {formattedAnnouncements.length > 1 && (
+                                                    <div className="announcements-divider">
+                                                        <div className="divider-label">
+                                                            <span className="divider-text">
+                                                                Old Announcements
+                                                            </span>
+                                                            <img
+                                                                src="assets/arrow-down2.png"
+                                                                alt="Arrow Down"
+                                                                className="divider-arrow"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Show remaining announcements */}
+                                                {formattedAnnouncements.slice(1).map((item, index) => (
+                                                    <div key={index + 1} className="announcement-item">
+                                                        {/* User Info Section */}
+                                                        <div className="announcement-user-info">
+                                                            <div className="announcement-user-left">
+                                                                <img
+                                                                    src={item.profile}
+                                                                    alt="Profile"
+                                                                    className="announcement-profile"
+                                                                />
+                                                                <div>
+                                                                    <h6 className="announcement-name">
+                                                                        {item.name}
+                                                                    </h6>
+                                                                    <span className="announcement-role">
+                                                                        <img
+                                                                            src={item.roleIcon}
+                                                                            alt="Role Icon"
+                                                                            className="role-icon"
+                                                                        />
+                                                                        {item.role}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <img
+                                                                src={item.options}
+                                                                alt="Options"
+                                                                className="announcement-options"
+                                                            />
+                                                        </div>
+
+                                                        {/* Text Section */}
+                                                        <div className="announcement-content">
+                                                            <div className="announcement-text-section">
+                                                                <p className="announcement-message">
+                                                                    {item.message}
+                                                                </p>
+                                                                
+                                                            </div>
+                                                            <span className="announcement-time">
+                                                                {item.time}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Button at the bottom */}
+                                    <div className="d-flex justify-content-center align-items-center mt-3">
                                         <button
-                                            className="btn border-0"
-                                            style={{
-                                                fontSize: "12px",
-                                                padding: "5px 10px",
-                                                textDecoration: "underline",
-                                                background: "transparent",
-                                                borderBottom: "1px solid #000",
-                                                fontWeight: "500",
-                                            }}
-                                            onClick={() => navigate("/news-and-announcements")}
+                                            className="create-announcement-btn"
+                                            onClick={() => navigate('/create-announcement')}
                                         >
-                                            View All
+                                            <img
+                                                src="assets/admin2.png"
+                                                alt="Announcement Icon"
+                                                className="create-announcement-icon"
+                                            />
+                                            Create Announcement
                                         </button>
                                     </div>
-
-                                    {/* Loop through announcements */}
-                                    {announcements.map((item, index) => (
-                                        <div key={index} style={{ marginBottom: '20px' }}>
-                                            {/* User Info Section */}
-                                            <div
-                                                className="d-flex align-items-start justify-content-between"
-                                            >
-                                                <div className="d-flex align-items-start">
-                                                    <img
-                                                        src={item.profile}
-                                                        alt="Teacher Profile"
-                                                        style={{
-                                                            width: '44px',
-                                                            height: '44px',
-                                                            borderRadius: '50%',
-                                                            marginRight: '15px',
-                                                        }}
-                                                    />
-                                                    <div>
-                                                        <h6
-                                                            style={{
-                                                                margin: 0,
-                                                                fontWeight: 500,
-                                                                fontSize: '14px',
-                                                                paddingTop: '2px',
-                                                            }}
-                                                        >
-                                                            {item.name}
-                                                        </h6>
-                                                        <span
-                                                            style={{
-                                                                display: 'block',
-                                                                color: '#475467',
-                                                                fontSize: '12px',
-                                                                fontWeight: '400',
-                                                            }}
-                                                        >
-                                                            <img
-                                                                src={item.roleIcon}
-                                                                alt="Role Icon"
-                                                                style={{
-                                                                    width: '12px',
-                                                                    height: '12px',
-                                                                    marginRight: '5px',
-                                                                }}
-                                                            />
-                                                            {item.role}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <img
-                                                    src={item.options}
-                                                    alt="Options"
-                                                    style={{
-                                                        width: '20px',
-                                                        height: '20px',
-                                                        cursor: 'pointer',
-                                                        marginRight: '18px',
-                                                    }}
-                                                />
-                                            </div>
-
-                                            {/* Text Section */}
-                                            <div style={{ marginTop: '10px' }}>
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'flex-start',
-                                                        marginTop: '5px',
-                                                        marginBottom: '10px',
-                                                    }}
-                                                >
-                                                    <p
-                                                        style={{
-                                                            margin: 0,
-                                                            color: '#374151',
-                                                            fontSize: '12px',
-                                                            fontWeight: '400',
-                                                            flex: 1,
-                                                            flexBasis: '85%',
-                                                            maxWidth: '85%',
-                                                        }}
-                                                    >
-                                                        {item.message}
-                                                    </p>
-                                                    <img
-                                                        src={item.thumb}
-                                                        alt="Thumb Icon"
-                                                        style={{
-                                                            width: '16px',
-                                                            height: '16.5px',
-                                                            marginRight: '15px',
-                                                            alignSelf: 'center',
-                                                        }}
-                                                    />
-                                                </div>
-                                                <span
-                                                    style={{
-                                                        fontSize: '11px',
-                                                        fontWeight: '400',
-                                                        color: '#4B5563',
-                                                    }}
-                                                >
-                                                    {item.time}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
                                 </div>
 
-                                {/* Border with Label */}
-                                <div
-                                    className="d-flex justify-content-center align-items-center mt-2"
-                                    style={{
-                                        borderTop: '1px solid #E5E7EB',
-                                        position: 'relative',
-                                        paddingTop: '10px',
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            position: 'absolute',
-                                            top: '-12px',
-                                            backgroundColor: '#FFF',
-                                            padding: '0 12px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            zIndex: 1,
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                color: '#9CA3AF',
-                                                fontSize: '11px',
-                                                fontWeight: '500',
-                                                marginRight: '8px',
-                                            }}
-                                        >
-                                            Old Announcements
+                                <Card className="p-3 mb-3 payment-card">
+                                    {/* Header */}
+                                    <h5 className="fw-bold mb-3 payment-title">
+                                        Fees and Payment Management
+                                    </h5>
+
+                                    {/* Amount Paid Today */}
+                                    <p className="payment-section-title">
+                                        Amount Paid Today
+                                    </p>
+                                    <p className="payment-section-desc">
+                                        Fees and Fines paid by today
+                                    </p>
+                                    <div className="payment-amount">
+                                        <h2 className="payment-amount-value">
+                                            {paymentInfo.amountPaidToday.toLocaleString()}
+                                        </h2>
+                                        <span className="payment-currency">Rs</span>
+                                    </div>
+
+                                    <div className="payment-divider"></div>
+
+                                    {/* Total Paid Amount */}
+                                    <p className="payment-total-text">
+                                        Total amount
+                                        <span className="payment-total-paid">
+                                            {paymentInfo.totalPaid.toLocaleString()} Rs
                                         </span>
-                                        <img
-                                            src="assets/arrow-down2.png"
-                                            alt="Arrow Down"
-                                            style={{
-                                                width: '16px',
-                                                height: '16px',
-                                            }}
-                                        />
-                                    </div>
-                                </div>
+                                    </p>
 
-                                {/* User Info Section */}
-                                <div
-                                    className="d-flex align-items-start"
-                                    style={{
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <div className="d-flex align-items-start">
-                                        <img
-                                            src={sara.profile}
-                                            alt="Teacher Profile"
-                                            style={{
-                                                width: '44px',
-                                                height: '44px',
-                                                borderRadius: '50%',
-                                                marginRight: '15px',
-                                            }}
-                                        />
-                                        <div>
-                                            <h6
-                                                style={{
-                                                    margin: 0,
-                                                    fontWeight: 500,
-                                                    fontSize: '14px',
-                                                    paddingTop: '2px',
-                                                }}
-                                            >
-                                                {sara.name}
-                                            </h6>
-                                            <span
-                                                style={{
-                                                    display: 'block',
-                                                    color: '#475467',
-                                                    fontSize: '12px',
-                                                    fontWeight: '400',
-                                                }}
-                                            >
-                                                <img
-                                                    src={sara.roleIcon}
-                                                    alt="Role Icon"
-                                                    style={{
-                                                        width: '12px',
-                                                        height: '12px',
-                                                        marginRight: '5px',
-                                                    }}
-                                                />
-                                                {sara.role}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <img
-                                        src={sara.options}
-                                        alt="Options"
-                                        style={{
-                                            width: '20px',
-                                            height: '20px',
-                                            cursor: 'pointer',
-                                            marginRight: '18px',
-                                        }}
-                                    />
-                                </div>
+                                    <div className="payment-divider"></div>
 
-                                {/* Text Section */}
-                                <div style={{ marginTop: '10px' }}>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'flex-start',
-                                            marginTop: '5px',
-                                            marginBottom: '10px',
-                                        }}
-                                    >
-                                        <p
-                                            style={{
-                                                margin: 0,
-                                                color: '#374151',
-                                                fontSize: '12px',
-                                                fontWeight: '400',
-                                                flex: 1,
-                                                flexBasis: '85%',
-                                                maxWidth: '85%',
-                                            }}
+                                    {/* Pending Fees */}
+                                    <p className="payment-section-title" style={{ marginTop: '12px' }}>
+                                        Pending Fees
+                                    </p>
+                                    <p className="payment-desc">
+                                        Fees challan number {paymentInfo.challanNumber} ({paymentInfo.challanStatus})
+                                    </p>
+                                    <div className="payment-amount">
+                                        <h4 className="payment-amount-value">
+                                            {paymentInfo.challanAmount.toLocaleString()}
+                                        </h4>
+                                        <span className="payment-currency">Rs</span>
+                                    </div>
+                                    <div className="payment-divider"></div>
+
+                                    {/* Pending Fines */}
+                                    <p className="payment-section-title" style={{ marginTop: '12px' }}>
+                                        Pending Fines
+                                    </p>
+                                    <p className="payment-desc">
+                                        Fine number {paymentInfo.fineNumber} ({paymentInfo.fineStatus})
+                                    </p>
+                                    <div className="payment-amount">
+                                        <h4 className="payment-amount-value">
+                                            {paymentInfo.fineAmount.toLocaleString()}
+                                        </h4>
+                                        <span className="payment-currency">Rs</span>
+                                    </div>
+
+                                    <div className="payment-divider"></div>
+
+                                    {/* Total Due Amount */}
+                                    <p className="payment-total-text" style={{ marginTop: '8px' }}>
+                                        Total amount
+                                        <span className="payment-total-due">
+                                            {paymentInfo.totalDue.toLocaleString()} Rs
+                                        </span>
+                                    </p>
+
+                                    {/* VIEW Button */}
+                                    <div className="view-btn-container">
+                                        <Button
+                                            variant="dark"
+                                            onClick={handleViewClick}
+                                            className="view-btn"
                                         >
-                                            {sara.message}
-                                        </p>
-                                        <img
-                                            src={sara.thumb}
-                                            alt="Thumb Icon"
-                                            style={{
-                                                width: '16px',
-                                                height: '16.5px',
-                                                marginRight: '15px',
-                                                alignSelf: 'center',
-                                            }}
-                                        />
+                                            VIEW
+                                        </Button>
                                     </div>
-                                    <span
-                                        style={{
-                                            fontSize: '11px',
-                                            fontWeight: '400',
-                                            color: '#4B5563',
-                                        }}
-                                    >
-                                        {sara.time}
-                                    </span>
-                                </div>
+                                </Card>
+                            </Col>
+                        </Row>
 
-                                {/* Button at the bottom */}
-                                <div className="d-flex justify-content-center align-items-center mt-3">
-                                    <button
-                                        style={{
-                                            backgroundColor: '#111827',
-                                            color: '#fff',
-                                            fontWeight: '400',
-                                            padding: '10px 20px',
-                                            border: 'none',
-                                            borderRadius: '12px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '10px',
-                                            cursor: 'pointer',
-                                            fontSize: '12px',
-                                        }}
-                                        onClick={() => navigate('/create-announcement')}
-                                    >
-                                        <img
-                                            src="assets/admin2.png"
-                                            alt="Announcement Icon"
-                                            style={{ width: '20px', height: '18px' }}
-                                        />
-                                        Create Announcement
-                                    </button>
-                                </div>
-                            </div>
-                            <Card className="p-3 mb-3" style={{ border: '1px solid #E5E7EB', borderRadius: '12px' }}>
-                                {/* Header */}
-                                <h5 className="fw-bold mb-3" style={{ fontSize: "16px", color: "#000", fontWeight: '600' }}>
-                                    Fees and Payment Management
-                                </h5>
+                        <Row style={{ marginTop: '0px' }}>
+                            <Col md={6}></Col>
+                        </Row>
+                    </Col>
+                </Row>
+            </Container>
 
-                                {/* Amount Paid Today */}
-                                <p style={{ fontSize: "14px", fontWeight: '500', color: '#111827', marginBottom: 4 }}>
-                                    Amount Paid Today
-                                </p>
-                                <p style={{ fontSize: "14px", color: '#4B5563', fontWeight: '400', marginBottom: '0px' }}>
-                                    Fees and Fines paid by today
-                                </p>
-                                <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                                    <h2 className="fw" style={{ fontSize: '24px', marginBottom: 0, fontWeight: '500' }}>
-                                        {paymentInfo.amountPaidToday.toLocaleString()}
-                                    </h2>
-                                    <span style={{ fontSize: '14px', color: '#4B5563', paddingLeft: '6px', fontWeight: '400' }}>Rs</span>
-                                </div>
-
-                                <div style={{ borderBottom: '1px solid #EAECF0', marginTop: '10px', marginBottom: '10px' }}></div>
-
-                                {/* Total Paid Amount */}
-                                <p style={{ fontSize: '14px', fontWeight: '500', color: '#000', marginBottom: 0 }}>
-                                    Total amount <span style={{ color: '#12B76A', paddingLeft: '6px', fontSize: '14px', fontWeight: '500' }}>{paymentInfo.totalPaid.toLocaleString()} Rs</span>
-                                </p>
-
-                                <div style={{ borderBottom: '1px solid #EAECF0', marginTop: '10px', marginBottom: '10px' }}></div>
-
-                                {/* Pending Fees */}
-                                <p style={{ fontSize: "14px", fontWeight: '500', color: '#111827', marginBottom: 0, marginTop: '12px' }}>
-                                    Pending Fees
-                                </p>
-                                <p style={{ fontSize: '14px', color: '#4B5563', fontWeight: '400' }}>
-                                    Fees challan number {paymentInfo.challanNumber} ({paymentInfo.challanStatus})
-                                </p>
-                                <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                                    <h4 className="fw" style={{ fontSize: '24px', marginBottom: 0, fontWeight: '500' }}>
-                                        {paymentInfo.challanAmount.toLocaleString()}
-                                    </h4>
-                                    <span style={{ fontSize: '14px', color: '#4B5563', paddingLeft: '6px', fontWeight: '400' }}>Rs</span>
-                                </div>
-                                <div style={{ borderBottom: '1px solid #EAECF0', marginTop: '10px', marginBottom: '10px' }}></div>
-
-
-                                {/* Pending Fines */}
-                                <p style={{ fontSize: "14px", fontWeight: '500', color: '#111827', marginBottom: 0, marginTop: '12px' }}>
-                                    Pending Fines
-                                </p>
-                                <p style={{ fontSize: '14px', color: '#4B5563', fontWeight: '400' }}>
-                                    Fine number {paymentInfo.fineNumber} ({paymentInfo.fineStatus})
-                                </p>
-                                <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                                    <h4 className="fw" style={{ fontSize: '24px', fontWeight: '500', marginBottom: 0 }}>
-                                        {paymentInfo.fineAmount.toLocaleString()}
-                                    </h4>
-                                    <span style={{ fontSize: '14px', color: '#4B5563', fontWeight: '400', paddingLeft: '6px' }}>Rs</span>
-                                </div>
-
-                                <div style={{ borderBottom: '1px solid #EAECF0', marginTop: '10px', marginBottom: '10px' }}></div>
-
-                                {/* Total Due Amount */}
-                                <p style={{ fontWeight: "500", fontSize: '14px', marginBottom: '0px', marginTop: '8px' }}>
-                                    Total amount <span style={{ color: '#D92D20', fontSize: '14px', fontWeight: '500', paddingLeft: '6px' }}>{paymentInfo.totalDue.toLocaleString()} Rs</span>
-                                </p>
-
-                                {/* VIEW Button */}
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
-                                    <Button
-                                        variant="dark"
-                                        onClick={handleViewClick}
-                                        style={{
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                            height: '45px',
-                                            borderRadius: '12px',
-                                            padding: '0 50px',
-                                            backgroundColor: '#111827',
-                                            border: 'none',
-                                            color: '#fff'
-                                        }}
-                                    >
-                                        VIEW
-                                    </Button>
-                                </div>
-                            </Card>
-                        </Col>
-                    </Row>
-
-                    <Row style={{ marginTop: '0px' }}>
-                        <Col md={6}></Col>
-                    </Row>
-                </Col>
-            </Row>
-        </Container>
+            <style jsx>{`
+                .loading-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                }
+                
+                .loading-stats {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 60px 20px;
+                }
+                
+                .loading-announcements {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 40px 20px;
+                }
+                
+                .loading-spinner {
+                    width: 40px;
+                    height: 40px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #111827;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-bottom: 16px;
+                }
+                
+                .loading-stats-text {
+                    font-size: 14px;
+                    color: #6c757d;
+                    margin: 0;
+                    font-weight: 500;
+                }
+                
+                .loading-announcements-text {
+                    font-size: 14px;
+                    color: #6c757d;
+                    margin: 0;
+                    font-weight: 500;
+                }
+                
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                .dashboard-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    width: 100%;
+                }
+                
+                .section-title {
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .main-heading {
+                    font-size: 24px;
+                    margin: 0;
+                    font-weight: 600;
+                }
+                
+                .user-info-section {
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .user-avatar {
+                    border-radius: 50%;
+                    width: 54px;
+                    height: 54px;
+                    margin-right: 10px;
+                }
+                
+                .user-details {
+                    margin-right: 10px;
+                }
+                
+                .user-name {
+                    font-weight: 500;
+                    font-size: 14px;
+                }
+                
+                .user-id {
+                    font-size: 12px;
+                    color: #6c757d;
+                }
+                
+                .welcome-card {
+                    border-radius: 12px;
+                    border: 1px solid #9747FF;
+                    background: #9747FF;
+                }
+                
+                .welcome-card-body {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                
+                .profile-info {
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .profile-image {
+                    width: 84px;
+                    height: 84px;
+                    object-fit: cover;
+                    margin-right: 16px;
+                }
+                
+                .welcome-text {
+                    color: white;
+                    font-size: 16px;
+                    font-weight: 500;
+                    margin-bottom: 0px;
+                }
+                
+                .welcome-name {
+                    font-weight: 600;
+                    margin-bottom: 0;
+                    font-size: 24px;
+                    color: white;
+                }
+                
+                .welcome-id {
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #D0D5DD;
+                    margin-bottom: 0;
+                }
+                
+                .attendance-container {
+                    border: 1px solid #EAECF0;
+                    border-radius: 12px;
+                    padding: 16px;
+                }
+                
+                .attendance-header {
+                    margin-bottom: 24px;
+                }
+                
+                .attendance-title {
+                    font-weight: 600;
+                    font-size: 16px;
+                    color: #000;
+                }
+                
+                .attendance-date {
+                    font-size: 12px;
+                    color: #374151;
+                    font-weight: 400;
+                }
+                
+                .stat-card {
+                    border-radius: 12px;
+                    border: none;
+                    cursor: pointer;
+                }
+                
+                .stat-card-body {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                    padding: 24px 28px;
+                    text-align: left;
+                }
+                
+                .stat-icon {
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 16px;
+                }
+                
+                .stat-icon img {
+                    width: 24px;
+                    height: 24px;
+                }
+                
+                .stat-value {
+                    margin: 0;
+                    font-weight: 500;
+                    font-size: 32px;
+                }
+                
+                .stat-label {
+                    margin: 0;
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: #667085;
+                }
+                
+                .announcements-container {
+                    border: 1px solid #E5E7EB;
+                    border-radius: 12px;
+                    background-color: #fff;
+                    margin-bottom: 20px;
+                }
+                
+                .announcements-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                }
+                
+                .announcements-title {
+                    margin: 0;
+                    font-weight: 600;
+                    font-size: 16px;
+                }
+                
+                .view-all-btn {
+                    font-size: 12px;
+                    padding: 5px 10px;
+                    text-decoration: underline;
+                    background: transparent;
+                    border-bottom: 1px solid #000;
+                    font-weight: 500;
+                    border: none;
+                }
+                
+                .announcement-item {
+                    margin-bottom: 20px;
+                }
+                
+                .announcement-user-info {
+                    display: flex;
+                    align-items: start;
+                    justify-content: space-between;
+                }
+                
+                .announcement-user-left {
+                    display: flex;
+                    align-items: start;
+                }
+                
+                .announcement-profile {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 50%;
+                    margin-right: 15px;
+                }
+                
+                .announcement-name {
+                    margin: 0;
+                    font-weight: 500;
+                    font-size: 14px;
+                    padding-top: 2px;
+                }
+                
+                .announcement-role {
+                    display: block;
+                    color: #475467;
+                    font-size: 12px;
+                    font-weight: 400;
+                }
+                
+                .role-icon {
+                    width: 12px;
+                    height: 12px;
+                    margin-right: 5px;
+                }
+                
+                .announcement-options {
+                    width: 20px;
+                    height: 20px;
+                    cursor: pointer;
+                    margin-right: 18px;
+                }
+                
+                .announcement-content {
+                    margin-top: 10px;
+                }
+                
+                .announcement-text-section {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-top: 5px;
+                    margin-bottom: 10px;
+                }
+                
+                .announcement-message {
+                    margin: 0;
+                    color: #374151;
+                    font-size: 12px;
+                    font-weight: 400;
+                    flex: 1;
+                    flex-basis: 85%;
+                    max-width: 85%;
+                }
+                
+                .announcement-thumb {
+                    width: 16px;
+                    height: 16.5px;
+                    margin-right: 15px;
+                    align-self: center;
+                }
+                
+                .announcement-time {
+                    font-size: 11px;
+                    font-weight: 400;
+                    color: #4B5563;
+                }
+                
+                .announcements-divider {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-top: 8px;
+                    border-top: 1px solid #E5E7EB;
+                    position: relative;
+                    padding-top: 10px;
+                }
+                
+                .divider-label {
+                    position: absolute;
+                    top: -12px;
+                    background-color: #FFF;
+                    padding: 0 12px;
+                    display: flex;
+                    align-items: center;
+                    z-index: 1;
+                }
+                
+                .divider-text {
+                    color: #9CA3AF;
+                    font-size: 11px;
+                    font-weight: 500;
+                    margin-right: 8px;
+                }
+                
+                .divider-arrow {
+                    width: 16px;
+                    height: 16px;
+                }
+                
+                .create-announcement-btn {
+                    background-color: #111827;
+                    color: #fff;
+                    font-weight: 400;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    cursor: pointer;
+                    font-size: 12px;
+                }
+                
+                .create-announcement-icon {
+                    width: 20px;
+                    height: 18px;
+                }
+                
+                .payment-card {
+                    border: 1px solid #E5E7EB;
+                    border-radius: 12px;
+                }
+                
+                .payment-title {
+                    font-size: 16px;
+                    color: #000;
+                    font-weight: 600;
+                }
+                
+                .payment-section-title {
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #111827;
+                    margin-bottom: 4px;
+                }
+                
+                .payment-section-desc {
+                    font-size: 14px;
+                    color: #4B5563;
+                    font-weight: 400;
+                    margin-bottom: 0px;
+                }
+                
+                .payment-amount {
+                    display: flex;
+                    align-items: baseline;
+                }
+                
+                .payment-amount-value {
+                    font-size: 24px;
+                    margin-bottom: 0;
+                    font-weight: 500;
+                }
+                
+                .payment-currency {
+                    font-size: 14px;
+                    color: #4B5563;
+                    padding-left: 6px;
+                    font-weight: 400;
+                }
+                
+                .payment-divider {
+                    border-bottom: 1px solid #EAECF0;
+                    margin-top: 10px;
+                    margin-bottom: 10px;
+                }
+                
+                .payment-total-text {
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #000;
+                    margin-bottom: 0;
+                }
+                
+                .payment-total-paid {
+                    color: #12B76A;
+                    padding-left: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+                
+                .payment-total-due {
+                    color: #D92D20;
+                    font-size: 14px;
+                    font-weight: 500;
+                    padding-left: 6px;
+                }
+                
+                .payment-desc {
+                    font-size: 14px;
+                    color: #4B5563;
+                    font-weight: 400;
+                }
+                
+                .view-btn {
+                    font-size: 14px;
+                    font-weight: 500;
+                    height: 45px;
+                    border-radius: 12px;
+                    padding: 0 50px;
+                    background-color: #111827;
+                    border: none;
+                    color: #fff;
+                }
+                
+                .view-btn-container {
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-top: 24px;
+                }
+            `}</style>
+        </>
     );
 };
 

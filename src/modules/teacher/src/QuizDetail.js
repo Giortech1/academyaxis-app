@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Container, Row, Col, Card, Image, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 function AssignmentDetails() {
+    const { userData } = useContext(UserContext);
     const { id } = useParams();
 }// Get the assignment ID from the route
 
@@ -42,7 +44,7 @@ function QuizDetail() {
                     <div className="d-flex align-items-center">
                         <Image
                             id="info-img"
-                            src="/assets/avatar.jpeg"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             roundedCircle
                             width={54}
                             height={54}
@@ -51,7 +53,7 @@ function QuizDetail() {
                         />
                         <div className="me-2">
                             <div style={{ fontWeight: "500", fontSize: "14px" }}>John Deo</div>
-                            <div style={{ fontSize: "12px", color: "#6c757d" }}>123456</div>
+                            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.teacher_id}</div>
                         </div>
                         <Button variant="link" className="p-0">
                             <Image

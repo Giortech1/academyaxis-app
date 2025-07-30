@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { UserContext } from "./UserContext";
 
 
 
 function Exams() {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
 
 
@@ -147,7 +149,7 @@ function Exams() {
                         {/* User Info */}
                         <img
                             id="info-img"
-                            src="/assets/avatar.jpeg" // Replace with your image path
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"} // Replace with your image path
                             alt="User"
                             style={{
                                 borderRadius: '50%',
@@ -158,8 +160,8 @@ function Exams() {
                             }}
                         />
                         <div style={{ marginRight: '10px' }}>
-                            <div style={{ fontWeight: '500', fontSize: '14' }}>Jhon Deo</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>123456</div>
+                            <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
+                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.teacher_id}</div>
                         </div>
                         <button
                             style={{

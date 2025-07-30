@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Row, Col, Card, Button, Image } from "react-bootstrap";
 // import Sidebar from "./Leftside";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 
 const Examsyllabus = () => {
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate();
 
   return (
@@ -34,7 +36,7 @@ const Examsyllabus = () => {
           <div className="d-flex align-items-center" id="exam-avatar">
             <Image
               id="info-img"
-              src="/assets/avatar.jpeg" // Replace with profile avatar image
+              src={userData?.profile_pic || "/assets/avatar.jpeg"} // Replace with profile avatar image
               alt="Profile"
               roundedCircle
               width={54}
@@ -43,9 +45,9 @@ const Examsyllabus = () => {
             />
             <div>
               <div style={{ fontSize: "14px", fontWeight: "500" }}>
-                Mian Hamad Khalil
+                {userData?.full_name}
               </div>
-              <div style={{ fontSize: "12px", color: "#6c757d" }}>14785200</div>
+              <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.student_id}</div>
             </div>
           </div>
         </header>

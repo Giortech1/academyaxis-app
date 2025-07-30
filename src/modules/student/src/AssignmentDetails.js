@@ -1,32 +1,21 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Container, Row, Col, Image, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "./UserContext";
-import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
-import { db } from './firebaseConfig';
 import { uploadDocument, validateFileSize, validateFileType } from "./utilityFunctions";
+import { toast, ToastContainer } from "react-toastify";
 
 function AssignmentDetails() {
-    const { id } = useParams();
     const location = useLocation();
+    const assignment = location.state?.assignment;
+    const sectionId = location.state?.sectionId;
     const navigate = useNavigate();
-    const { userData } = useContext(UserContext);
+    const { userData, refreshSections, updateAssignmentById } = useContext(UserContext);
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-
-    const assignment = location.state?.assignment;
-    const sectionId = location.state?.sectionId;
-
-    useEffect(() => {
-        if (assignment?.status === "Submitted" ||
-            (assignment?.submitted && assignment.submitted.some(sub => sub.studentId === userData?.student_id))) {
-            setIsSubmitted(true);
-        }
-    }, [assignment, userData]);
 
     const allowedTypes = [
         'application/pdf',
@@ -36,6 +25,11 @@ function AssignmentDetails() {
     ];
 
     const maxFileSize = 10;
+
+    const isSubmitted = assignment?.category === "Submitted";
+    const isOverdue = assignment?.category === "Overdue";
+    const isUpcoming = assignment?.category === "Upcoming";
+    const submittedData = assignment?.submittedData || null;
 
     useEffect(() => {
         if (!assignment?.dueDate) return;
@@ -68,31 +62,47 @@ function AssignmentDetails() {
         if (!file) return;
 
         if (!validateFileType(file, allowedTypes)) {
-            alert("Please select a valid file type (PDF, DOC, DOCX, or TXT)");
+            toast.error("Please select a valid file type (PDF, DOC, DOCX, or TXT)");
             return;
         }
 
         if (!validateFileSize(file, maxFileSize)) {
-            alert(`File size must be less than ${maxFileSize}MB`);
+            toast.error(`File size must be less than ${maxFileSize}MB`);
             return;
         }
 
         setSelectedFile(file);
     };
 
+    const simulateProgress = () => {
+        return new Promise((resolve) => {
+            setUploadProgress(0);
+            const interval = setInterval(() => {
+                setUploadProgress(prev => {
+                    if (prev >= 95) {
+                        clearInterval(interval);
+                        resolve();
+                        return 95;
+                    }
+                    return prev + Math.random() * 15;
+                });
+            }, 200);
+        });
+    };
+
     const handleSubmitAssignment = async () => {
         if (!selectedFile) {
-            alert("Please select a file first");
+            toast.error("Please select a file first");
             return;
         }
 
         if (!userData?.student_id) {
-            alert("User information not available");
+            toast.error("User information not available");
             return;
         }
 
         if (!sectionId || !assignment?.id) {
-            alert("Assignment information not available");
+            toast.error("Assignment information not available");
             return;
         }
 
@@ -100,13 +110,20 @@ function AssignmentDetails() {
         setUploadProgress(0);
 
         try {
+            const progressPromise = simulateProgress();
+
             const uploadOptions = {
                 folder: 'assignments',
                 id: userData.student_id,
                 nameSlug: `${assignment.name.replace(/\s+/g, '_')}_${assignment.id}`
             };
 
-            const downloadURL = await uploadDocument(selectedFile, uploadOptions);
+            const [downloadURL] = await Promise.all([
+                uploadDocument(selectedFile, uploadOptions),
+                progressPromise
+            ]);
+
+            setUploadProgress(100);
 
             const submissionData = {
                 studentId: userData.student_id,
@@ -122,45 +139,24 @@ function AssignmentDetails() {
                 sectionId: sectionId
             };
 
-            const sectionRef = doc(db, 'sections', sectionId);
-            const assignmentRef = doc(db, 'sections', sectionId, 'assignments', assignment.id);
+            const response = await updateAssignmentById(sectionId, assignment?.id, submissionData);
 
-            await updateDoc(assignmentRef, {
-                submitted: arrayUnion(submissionData)
-            });
-
-            const sectionDoc = await getDoc(sectionRef);
-            if (sectionDoc.exists()) {
-                const sectionData = sectionDoc.data();
-                const assignments = sectionData.assignments || [];
-                const assignmentIndex = assignments.findIndex(a => a.id === assignment.id);
-
-                if (assignmentIndex !== -1) {
-                    assignments[assignmentIndex].submitted = assignments[assignmentIndex].submitted || [];
-                    assignments[assignmentIndex].submitted.push(submissionData);
-
-                    await updateDoc(sectionRef, {
-                        assignments: assignments
-                    });
-                }
+            if (response?.success) {
+                setSelectedFile(null);
+                toast.success("Assignment submitted successfully!");
+                await refreshSections(userData?.student_id);
+                navigate(-1);
             }
-
-            setIsSubmitted(true);
-            setSelectedFile(null);
-            alert("Assignment submitted successfully!");
 
         } catch (error) {
             console.error("Error submitting assignment:", error);
-            alert("Failed to submit assignment. Please try again.");
-        } finally {
-            setIsUploading(false);
-            setUploadProgress(0);
+            toast.error("Failed to submit assignment. Please try again.");
         }
     };
 
     const handleMessageTeacher = () => {
         console.log("Opening message to teacher");
-        alert("Message feature coming soon!");
+        toast.error("Message feature coming soon!");
     };
 
     const formatTime = (time) => {
@@ -183,6 +179,95 @@ function AssignmentDetails() {
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const getStatusColor = () => {
+        if (isSubmitted) return '#22C55E';
+        if (isOverdue) return '#EF4444';
+        return '#F59E0B';
+    };
+
+    const getStatusText = () => {
+        if (isSubmitted) return 'Submitted';
+        if (isOverdue) return 'Overdue';
+        return 'Upcoming';
+    };
+
+    const renderSubmissionStatus = () => {
+        if (isSubmitted && submittedData) {
+            return (
+                <div style={{
+                    marginTop: '15px',
+                    padding: '15px',
+                    backgroundColor: '#F0FDF4',
+                    borderRadius: '8px',
+                    border: '1px solid #22C55E'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px', marginRight: '8px' }}>✅</span>
+                        <p style={{ color: '#22C55E', fontSize: '16px', fontWeight: '600', margin: '0' }}>
+                            Assignment Successfully Submitted
+                        </p>
+                    </div>
+
+                    <div style={{ marginTop: '10px' }}>
+                        <p style={{ color: '#166534', fontSize: '14px', margin: '4px 0', fontWeight: '500' }}>
+                            📄 File: {submittedData.fileName}
+                        </p>
+                        <p style={{ color: '#166534', fontSize: '14px', margin: '4px 0' }}>
+                            📊 Size: {formatFileSize(submittedData.fileSize)}
+                        </p>
+                        <p style={{ color: '#166534', fontSize: '14px', margin: '4px 0' }}>
+                            📅 Submitted: {new Date(submittedData.submittedAt).toLocaleString()}
+                        </p>
+                        <p style={{ color: '#166534', fontSize: '14px', margin: '4px 0' }}>
+                            👤 Student: {submittedData.studentName}
+                        </p>
+                        {submittedData.downloadURL && (
+                            <a
+                                href={submittedData.downloadURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    color: '#1D4ED8',
+                                    textDecoration: 'none',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    display: 'inline-block',
+                                    marginTop: '8px'
+                                }}
+                            >
+                                🔗 View Submitted File
+                            </a>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        if (isOverdue) {
+            return (
+                <div style={{
+                    marginTop: '15px',
+                    padding: '15px',
+                    backgroundColor: '#FEF2F2',
+                    borderRadius: '8px',
+                    border: '1px solid #EF4444'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px', marginRight: '8px' }}>⏰</span>
+                        <p style={{ color: '#EF4444', fontSize: '16px', fontWeight: '600', margin: '0' }}>
+                            Assignment Overdue
+                        </p>
+                    </div>
+                    <p style={{ color: '#991B1B', fontSize: '14px', margin: '4px 0 0 0' }}>
+                        The deadline for this assignment has passed. You can no longer submit your work.
+                    </p>
+                </div>
+            );
+        }
+
+        return null;
     };
 
     if (!assignment) {
@@ -250,6 +335,48 @@ function AssignmentDetails() {
                                 <h4 style={styles.assignmentHeader}>
                                     Assignment Details
                                 </h4>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    {getStatusText() !== 'Upcoming' &&
+                                        <div style={{
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            backgroundColor: getStatusColor(),
+                                            color: 'white',
+                                            fontSize: '12px',
+                                            fontWeight: '500',
+                                            marginRight: '10px'
+                                        }}>
+                                            {getStatusText()}
+                                        </div>
+                                    }
+                                    {submittedData?.marks && getStatusText() === 'Submitted' && (
+                                        <>
+                                            <div style={{
+                                                padding: '4px 12px',
+                                                borderRadius: '20px',
+                                                backgroundColor: '#3b82f6',
+                                                color: 'white',
+                                                fontSize: '12px',
+                                                fontWeight: '500',
+                                                marginRight: '10px'
+                                            }}>
+                                                Total Marks: {assignment?.totalMarks}
+                                            </div>
+
+                                            <div style={{
+                                                padding: '4px 12px',
+                                                borderRadius: '20px',
+                                                backgroundColor: '#8b5cf6',
+                                                color: 'white',
+                                                fontSize: '12px',
+                                                fontWeight: '500',
+                                                marginRight: '10px'
+                                            }}>
+                                                Obtain Marks: {submittedData?.marks}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Assignment Info */}
@@ -352,8 +479,9 @@ function AssignmentDetails() {
                                     />
                                     <p style={styles.uploadText}>
                                         {isSubmitted ? 'Assignment has been submitted' :
-                                            selectedFile ? selectedFile.name :
-                                                "Drag and drop or choose a file to upload"}
+                                            isOverdue ? 'Assignment is overdue' :
+                                                selectedFile ? selectedFile.name :
+                                                    "Drag and drop or choose a file to upload"}
                                     </p>
                                     <p style={styles.uploadSubtext}>
                                         PDF, DOC, DOCX, or TXT (Max {maxFileSize}MB)
@@ -372,12 +500,12 @@ function AssignmentDetails() {
                                                 <div style={{
                                                     width: `${uploadProgress}%`,
                                                     height: '100%',
-                                                    backgroundColor: '#9747FF',
-                                                    transition: 'width 0.3s ease'
+                                                    backgroundColor: uploadProgress === 100 ? '#22C55E' : '#9747FF',
+                                                    transition: 'width 0.3s ease, background-color 0.3s ease'
                                                 }} />
                                             </div>
                                             <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                                                Uploading... {uploadProgress}%
+                                                {uploadProgress === 100 ? 'Upload Complete!' : `Uploading... ${Math.round(uploadProgress)}%`}
                                             </p>
                                         </div>
                                     )}
@@ -388,26 +516,28 @@ function AssignmentDetails() {
                                         accept=".pdf,.doc,.docx,.txt"
                                         style={{ display: 'none' }}
                                         id="fileInput"
-                                        disabled={isUploading || isSubmitted}
+                                        disabled={isUploading || isSubmitted || isOverdue}
                                     />
                                     <Button
                                         onClick={() => document.getElementById('fileInput').click()}
-                                        disabled={isUploading || isSubmitted}
+                                        disabled={isUploading || isSubmitted || isOverdue}
                                         style={{
-                                            backgroundColor: isSubmitted ? '#9CA3AF' : '#6B7280',
+                                            backgroundColor: (isSubmitted || isOverdue) ? '#9CA3AF' : '#6B7280',
                                             border: 'none',
                                             borderRadius: '8px',
                                             padding: '8px 16px',
                                             fontSize: '14px',
                                             marginTop: '8px',
-                                            cursor: (isUploading || isSubmitted) ? 'not-allowed' : 'pointer'
+                                            cursor: (isUploading || isSubmitted || isOverdue) ? 'not-allowed' : 'pointer'
                                         }}
                                     >
-                                        {isSubmitted ? 'Already Submitted' : 'Choose File'}
+                                        {isSubmitted ? 'Already Submitted' :
+                                            isOverdue ? 'Assignment Overdue' :
+                                                'Choose File'}
                                     </Button>
 
                                     {/* File Info */}
-                                    {selectedFile && !isSubmitted && (
+                                    {selectedFile && isUpcoming && (
                                         <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
                                             <p>📄 {getFileTypeDescription(selectedFile.type)}</p>
                                             <p>📊 Size: {formatFileSize(selectedFile.size)}</p>
@@ -416,22 +546,7 @@ function AssignmentDetails() {
                                     )}
 
                                     {/* Submission Status */}
-                                    {isSubmitted && (
-                                        <div style={{
-                                            marginTop: '15px',
-                                            padding: '10px',
-                                            backgroundColor: '#F0FDF4',
-                                            borderRadius: '8px',
-                                            border: '1px solid #22C55E'
-                                        }}>
-                                            <p style={{ color: '#22C55E', fontSize: '14px', fontWeight: '500', margin: '0' }}>
-                                                ✅ Assignment Successfully Submitted
-                                            </p>
-                                            <p style={{ color: '#666', fontSize: '12px', margin: '4px 0 0 0' }}>
-                                                Your assignment has been submitted and is now being reviewed by your teacher.
-                                            </p>
-                                        </div>
-                                    )}
+                                    {renderSubmissionStatus()}
                                 </div>
                             </div>
                         </Col>
@@ -480,8 +595,9 @@ function AssignmentDetails() {
                             </div>
 
                             <div style={styles.timeDescription}>
-                                Stay focused and manage your time wisely. Completing tasks ahead of
-                                deadlines ensures smooth progress in your coursework.
+                                {isSubmitted ? 'Great job! You have successfully submitted your assignment.' :
+                                    isOverdue ? 'This assignment is overdue. Please contact your teacher for further assistance.' :
+                                        'Stay focused and manage your time wisely. Completing tasks ahead of deadlines ensures smooth progress in your coursework.'}
                             </div>
 
                             <div style={styles.teacherInfo}>
@@ -527,20 +643,26 @@ function AssignmentDetails() {
                     <div className="col-lg-8" style={styles.submitButtonContainer}>
                         <button
                             onClick={handleSubmitAssignment}
-                            disabled={isUploading || isSubmitted || !selectedFile}
+                            disabled={isUploading || isSubmitted || isOverdue || !selectedFile}
                             style={{
                                 ...styles.submitButton,
-                                backgroundColor: isSubmitted ? '#22C55E' : (isUploading || !selectedFile) ? '#9CA3AF' : '#9747FF',
-                                cursor: (isUploading || isSubmitted || !selectedFile) ? 'not-allowed' : 'pointer'
+                                backgroundColor: isSubmitted ? '#22C55E' :
+                                    isOverdue ? '#EF4444' :
+                                        (isUploading || !selectedFile) ? '#9CA3AF' : '#9747FF',
+                                cursor: (isUploading || isSubmitted || isOverdue || !selectedFile) ? 'not-allowed' : 'pointer'
                             }}
                         >
-                            {isUploading ? 'Submitting...' : isSubmitted ? 'Assignment Submitted ✓' : 'Submit Assignment'}
+                            {isUploading ? `Uploading... ${Math.round(uploadProgress)}%` :
+                                isSubmitted ? 'Assignment Submitted ✓' :
+                                    isOverdue ? 'Assignment Overdue ⏰' :
+                                        'Submit Assignment'}
                         </button>
                     </div>
                 </Row>
             </main>
 
             <AssignmentDetailStyles />
+            <ToastContainer />
         </Container>
     );
 }

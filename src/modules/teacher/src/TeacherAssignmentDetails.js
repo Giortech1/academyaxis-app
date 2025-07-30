@@ -1,15 +1,20 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Table, Button, Image, Form } from "react-bootstrap";
+import { Table, Button, Image, Form, Modal } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { UserContext } from "./UserContext";
+import { toast, ToastContainer } from "react-toastify";
 
 const TeacherAssignmentDetails = () => {
     const { assignmentId, sectionId } = useParams();
-    const { userData, sections, fetchAssignments } = useContext(UserContext);
+    const { userData, sections, fetchAssignments, updateAssignmentById } = useContext(UserContext);
     const [sectionData, setSectionData] = useState(null);
     const [assignmentData, setAssignmentData] = useState(null);
     const [activeButton, setActiveButton] = useState('Overall');
     const [searchTerm, setSearchTerm] = useState('');
+    const [showMarksModal, setShowMarksModal] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [marksInput, setMarksInput] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
     const navigate = useNavigate();
 
     const spinnerKeyframes = `
@@ -42,8 +47,8 @@ const TeacherAssignmentDetails = () => {
                     const matchedAssignment = response?.data.find(assign => assign?.id === assignmentId);
                     setAssignmentData(matchedAssignment);
 
-                    console.log('Section: ', matchedSection);
-                    console.log('Assignment: ', matchedAssignment);
+                    console.log(matchedSection);
+                    console.log(matchedAssignment);
                 }
             } catch (error) {
                 console.log('Error fetching assignments: ', error);
@@ -68,25 +73,117 @@ const TeacherAssignmentDetails = () => {
         color: activeButton === buttonName ? 'white' : '#475467',
     });
 
+    const getStudentSubmission = (studentId) => {
+        return assignmentData?.submitted?.find(sub => sub.studentId === studentId);
+    };
+
+    const handleDownloadAssignment = (submission) => {
+        if (submission?.downloadURL) {
+            const link = document.createElement('a');
+            link.href = submission.downloadURL;
+            link.download = submission.fileName || 'assignment.pdf';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    const handleUpdateMarks = async () => {
+        if (!selectedStudent || !marksInput.trim()) return;
+
+        setIsUpdating(true);
+        try {
+            const response = await updateAssignmentById(
+                sectionId,
+                assignmentId,
+                selectedStudent.student_id,
+                { marks: parseInt(marksInput) }
+            );
+
+            if (response?.success) {
+                const refreshResponse = await fetchAssignments(sectionId);
+                if (refreshResponse?.success) {
+                    const updatedAssignment = refreshResponse.data.find(assign => assign.id === assignmentId);
+                    setAssignmentData(updatedAssignment);
+                }
+                
+                setShowMarksModal(false);
+                setSelectedStudent(null);
+                setMarksInput('');
+                toast.success('Marks updated successfully!');
+            } else {
+                toast.error('Failed to update marks: ' + response.message);
+            }
+        } catch (error) {
+            console.error('Error updating marks:', error);
+            toast.error('Error updating marks. Please try again.');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    // Open marks modal
+    const openMarksModal = (student, submission) => {
+        setSelectedStudent({
+            ...student,
+            submission: submission
+        });
+        setMarksInput(submission?.marks?.toString() || '');
+        setShowMarksModal(true);
+    };
+
     const renderSubmissionStatus = (student, assignment) => {
-        const isSubmitted = assignment?.submitted?.includes(student.id);
+        const submission = getStudentSubmission(student.student_id);
         const currentDate = new Date();
         const endDate = new Date(assignment?.endDate);
-        const isLate = currentDate > endDate && !isSubmitted;
+        const isLate = currentDate > endDate && !submission;
 
-        if (isSubmitted) {
-            return assignment?.endDate ? new Date(assignment.endDate).toLocaleDateString() : "Submitted";
+        if (submission) {
+            const submissionDate = new Date(submission.submittedAt);
+            const wasLate = submissionDate > endDate;
+            return (
+                <div style={{
+                    ...styles.statusBadge,
+                    backgroundColor: wasLate ? '#FEF2F2' : '#F0FDF4',
+                    color: wasLate ? '#DC2626' : '#16A34A'
+                }}>
+                    <div style={{
+                        ...styles.statusDot,
+                        backgroundColor: wasLate ? '#DC2626' : '#16A34A'
+                    }}></div>
+                    {wasLate ? 'Late Submission' : 'Submitted'}
+                </div>
+            );
         } else if (isLate) {
-            return "Late";
+            return (
+                <div style={{
+                    ...styles.statusBadge,
+                    backgroundColor: '#FEF2F2',
+                    color: '#DC2626'
+                }}>
+                    <div style={{...styles.statusDot, backgroundColor: '#DC2626'}}></div>
+                    Late
+                </div>
+            );
         } else {
-            return "Not Submitted";
+            return (
+                <div style={{
+                    ...styles.statusBadge,
+                    backgroundColor: '#FEF2F2',
+                    color: '#DC2626'
+                }}>
+                    <div style={{...styles.statusDot, backgroundColor: '#DC2626'}}></div>
+                    Not Submitted
+                </div>
+            );
         }
     };
 
     const renderAssignmentCell = (student, assignment) => {
-        const isSubmitted = assignment?.submitted?.includes(student.id);
+        const submission = getStudentSubmission(student.student_id);
 
-        if (!isSubmitted) {
+        if (!submission) {
             return (
                 <div style={styles.notSubmittedBadge}>
                     <div style={styles.notSubmittedDot}></div>
@@ -102,8 +199,10 @@ const TeacherAssignmentDetails = () => {
                         style={styles.assignmentAvatar}
                     />
                     <div style={styles.assignmentTitle}>
-                        {assignment?.title || "Assignment"}
-                        <div style={styles.assignmentType}>PDF file</div>
+                        {submission.fileName || submission.assignmentName || "Assignment"}
+                        <div style={styles.assignmentType}>
+                            {submission.fileType === 'application/pdf' ? 'PDF file' : 'File'}
+                        </div>
                     </div>
                 </div>
             );
@@ -123,15 +222,17 @@ const TeacherAssignmentDetails = () => {
         }
 
         if (activeButton === 'Submitted') {
-            filteredStudents = filteredStudents.filter(student =>
-                assignmentData.submitted?.includes(student.id)
-            );
+            filteredStudents = filteredStudents.filter(student => {
+                const submission = getStudentSubmission(student.student_id);
+                return submission !== undefined;
+            });
         } else if (activeButton === 'Late Submission') {
             const currentDate = new Date();
             const endDate = new Date(assignmentData.endDate);
-            filteredStudents = filteredStudents.filter(student =>
-                !assignmentData.submitted?.includes(student.id) && currentDate > endDate
-            );
+            filteredStudents = filteredStudents.filter(student => {
+                const submission = getStudentSubmission(student.student_id);
+                return !submission && currentDate > endDate;
+            });
         }
 
         return filteredStudents;
@@ -258,43 +359,50 @@ const TeacherAssignmentDetails = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredStudents.map((student) => {
-                        const isSubmitted = assignmentData.submitted?.includes(student.id);
-                        const currentDate = new Date();
-                        const endDate = new Date(assignmentData.endDate);
-                        const isLate = currentDate > endDate && !isSubmitted;
+                    {filteredStudents?.map((student) => {
+                        const submission = getStudentSubmission(student.student_id);
 
                         return (
-                            <tr key={student.id} style={styles.tableRow}>
+                            <tr key={student?.id} style={styles.tableRow}>
                                 <td style={styles.studentCell}>
                                     <img
-                                        src={student.profile_pic || "/assets/Avatar3.png"}
+                                        src={student?.profile_pic || "/assets/Avatar3.png"}
                                         alt="Avatar"
                                         style={styles.studentAvatar}
                                     />
-                                    {student.full_name}
+                                    {student?.full_name}
                                 </td>
-                                <td style={styles.normalText}>{student.student_id}</td>
+                                <td style={styles.normalText}>{student?.student_id}</td>
                                 <td style={styles.normalText}>
                                     {renderSubmissionStatus(student, assignmentData)}
                                 </td>
                                 <td style={styles.normalText}>
-                                    {new Date(assignmentData.endDate).toLocaleDateString()}
+                                    {new Date(assignmentData?.endDate).toLocaleDateString()}
                                 </td>
                                 <td>
                                     {renderAssignmentCell(student, assignmentData)}
                                 </td>
                                 <td style={styles.marksText}>
-                                    {isSubmitted ? "95" : "-"}
+                                    <span
+                                        style={{
+                                            ...styles.marksText,
+                                            cursor: submission ? 'pointer' : 'default',
+                                            textDecoration: submission ? 'underline' : 'none'
+                                        }}
+                                        onClick={() => submission && openMarksModal(student, submission)}
+                                    >
+                                        {submission?.marks || (submission ? "0" : "-")}
+                                    </span>
                                 </td>
                                 <td>
                                     <div style={{ alignItems: "center", justifyContent: "center" }}>
                                         <div
                                             style={{
                                                 ...styles.actionButton,
-                                                cursor: isSubmitted ? "pointer" : "not-allowed",
-                                                opacity: isSubmitted ? 1 : 0.5
+                                                cursor: submission ? "pointer" : "not-allowed",
+                                                opacity: submission ? 1 : 0.5
                                             }}
+                                            onClick={() => submission && handleDownloadAssignment(submission)}
                                         >
                                             <img
                                                 src="/assets/import1.png"
@@ -315,6 +423,49 @@ const TeacherAssignmentDetails = () => {
                     No students found matching your criteria.
                 </div>
             )}
+
+            {/* Marks Update Modal */}
+            <Modal show={showMarksModal} onHide={() => setShowMarksModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Update Marks</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="mb-3">
+                        <strong>Student:</strong> {selectedStudent?.full_name}
+                    </div>
+                    <div className="mb-3">
+                        <strong>Assignment:</strong> {selectedStudent?.submission?.fileName || selectedStudent?.submission?.assignmentName}
+                    </div>
+                    <div className="mb-3">
+                        <strong>Total Marks:</strong> {assignmentData?.totalMarks || 100}
+                    </div>
+                    <Form.Group>
+                        <Form.Label>Marks Obtained:</Form.Label>
+                        <Form.Control
+                            type="number"
+                            value={marksInput}
+                            onChange={(e) => setMarksInput(e.target.value)}
+                            placeholder="Enter marks"
+                            min="0"
+                            max={assignmentData?.totalMarks || 100}
+                        />
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowMarksModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="primary" 
+                        onClick={handleUpdateMarks}
+                        disabled={isUpdating || !marksInput.trim()}
+                    >
+                        {isUpdating ? 'Updating...' : 'Update Marks'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <ToastContainer />
         </div>
     );
 };
@@ -453,6 +604,22 @@ const styles = {
         fontWeight: '400',
         color: '#4B5563',
         textDecoration: 'underline'
+    },
+    statusBadge: {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        borderRadius: '12px',
+        height: '28px',
+        padding: '4px 8px',
+        fontSize: '12px',
+        fontWeight: '500',
+        width: 'fit-content'
+    },
+    statusDot: {
+        width: "6px",
+        height: "6px",
+        borderRadius: "50%"
     },
     notSubmittedBadge: {
         display: "flex",

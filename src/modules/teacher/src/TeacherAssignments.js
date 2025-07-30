@@ -52,12 +52,8 @@ function Assignments() {
         return (
             <span
                 style={{
-                    height: "8px",
-                    width: "8px",
+                    ...styles.statusDot,
                     backgroundColor: color,
-                    borderRadius: "50%",
-                    display: "inline-block",
-                    marginRight: "8px",
                 }}
             />
         );
@@ -67,142 +63,91 @@ function Assignments() {
         <Container fluid className="p-0 d-flex">
             <main className="flex-grow-1 p-3">
                 {/* Header Section */}
-                <header
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '10px',
-                        paddingtop: '0px',
-                        width: '100%',
-
-                    }}
-                >
+                <header style={styles.header}>
                     {/* Left side: Arrow and Heading */}
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-
-                        <h1 style={{ fontSize: '24px', margin: 0, fontWeight: '600' }}>Assignments</h1>
+                    <div style={styles.headerLeft}>
+                        <Image
+                            src="/assets/arrow-left.png"
+                            roundedCircle
+                            width={24}
+                            height={24}
+                            className="me-2"
+                            alt="Back Arrow"
+                            style={styles.backArrow}
+                            onClick={() => navigate(-1)}
+                        />
+                        <h1 style={styles.headerTitle}>Assignments</h1>
                     </div>
 
                     {/* Right side: User Info and Dropdown */}
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={styles.headerRight}>
                         {/* User Info */}
                         <img
                             src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
-                            style={{
-                                borderRadius: '50%',
-                                width: '54px',
-                                height: '54px',
-                                marginRight: '10px',
-
-                            }}
+                            style={styles.userImage}
                         />
-                        <div style={{ marginRight: '10px' }}>
-                            <div style={{ fontWeight: '500', fontSize: '14' }}>{userData?.full_name}</div>
-                            <div style={{ fontSize: '12px', color: '#6c757d' }}>{userData?.teacher_id}</div>
+                        <div style={styles.userInfo}>
+                            <div style={styles.userName}>{userData?.full_name}</div>
+                            <div style={styles.userTeacherId}>{userData?.teacher_id}</div>
                         </div>
-                        <button
-                            style={{
-                                backgroundColor: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                            }}
-                        >
+                        <button style={styles.dropdownButton}>
                             <img
                                 src="/assets/arrow-down.png"
                                 alt="Dropdown"
-                                style={{ width: '12px', height: '12px' }}
+                                style={styles.dropdownIcon}
                             />
                         </button>
                     </div>
                 </header>
 
-                <header className="d-flex justify-content-between align-items-center mb-4" style={{ marginTop: "15px" }}>
+                <header className="d-flex justify-content-between align-items-center mb-4" style={styles.subHeader}>
                     {/* Left Section*/}
                     <div className="d-flex align-items-center">
                         <div
                             className="d-flex align-items-center me-3"
-                            style={{
-                                border: "1px solid #D1D5DB",
-                                borderRadius: "8px",
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                backgroundColor: "white",
-                                justifyContent: "center",
-                                width: "auto"
-                            }}
+                            style={styles.sectionBox}
                         >
-                            <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                            <span style={styles.sectionText}>
                                 {sectionData?.course?.name}
                             </span>
                         </div>
 
                         <div
                             className="d-flex align-items-center me-3"
-                            style={{
-                                border: "1px solid #D1D5DB",
-                                borderRadius: "8px",
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                backgroundColor: "white",
-                                justifyContent: "center",
-                                width: "auto"
-                            }}
+                            style={styles.sectionBox}
                         >
-                            <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                            <span style={styles.sectionText}>
                                 Section {sectionData?.section}
                             </span>
                         </div>
                     </div>
 
-
                     {/* Right Section: Search Bar, Sort, and Button */}
                     <div className="d-flex align-items-center">
                         {/* Search Bar */}
-                        <div className="position-relative me-3">
+                        <div className="position-relative me-3" style={styles.searchContainer}>
                             <Form.Control
                                 type="text"
                                 placeholder={"Search"}
                                 value={searchText}
                                 onChange={(e) => setSearchText(e.target.value)}
-                                style={{
-                                    borderRadius: "8px",
-                                    paddingLeft: "40px",
-                                    fontSize: "14px",
-                                    fontWeight: "400",
-                                    color: "#98A2B3",
-                                    border: "1px solid #D1D5DB",
-                                    width: "300px",
-                                }}
+                                style={styles.searchInput}
                             />
                             <Image
                                 src="/assets/search-lg.png"
                                 alt="Search Icon"
                                 width={20}
                                 height={20}
-                                style={{
-                                    position: "absolute",
-                                    top: "50%",
-                                    left: "12px",
-                                    transform: "translateY(-50%)",
-                                }}
+                                style={styles.searchIcon}
                             />
                         </div>
 
                         {/* Create Quiz Button */}
                         <Button
                             className="d-flex align-items-center"
-                            style={{
-                                backgroundColor: "#101828",
-                                color: "white",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                fontWeight: "600",
-                                padding: "8px 16px",
-                                border: "none",
-                            }}
-                            onClick={() => navigate("/create-assignments")}
+                            style={styles.createButton}
+                            onClick={() => navigate(`/create-assignments/${sectionData?.id}`)}
                         >
                             <Image
                                 src="/assets/plus1.png"
@@ -213,42 +158,24 @@ function Assignments() {
                             />
                             Create Assignments
                         </Button>
-
                     </div>
                 </header>
 
-
-                <div className="border rounded p-3" style={{ height: "750px" }}>
+                <div className="border rounded p-3" style={styles.tableContainer}>
                     {/* Table Section */}
-                    <div style={{ maxHeight: "690px", overflowY: "auto", overflowX: "auto" }}>
+                    <div style={styles.tableScrollContainer}>
                         <Table
                             hover
                             className="mb-0"
-                            style={{
-                                color: "#4B5563",
-                                fontFamily: "Inter",
-                                fontSize: "16px",
-                                fontWeight: "500",
-                            }}
+                            style={styles.table}
                         >
-                            <thead
-                                style={{
-                                    position: "sticky",
-                                    top: 0,
-                                    background: "#FFFFFF",
-                                    zIndex: 1,
-                                    fontStyle: "normal",
-                                    color: "#111827",
-                                    fontSize: "16px",
-                                    fontWeight: "500",
-                                    fontFamily: "Inter",
-                                }}
-                            >
-                                <tr style={{ fontSize: '16px', fontWeight: '500', color: '#111827' }}>
+                            <thead style={styles.tableHead}>
+                                <tr style={styles.tableHeaderRow}>
                                     <th>Sr No.</th>
                                     <th>Name</th>
                                     <th>Start Date</th>
                                     <th>Deadline</th>
+                                    <th>Schedule</th>
                                     <th>Status</th>
                                     <th>View</th>
                                     <th></th>
@@ -258,32 +185,21 @@ function Assignments() {
                                 {assignmentsData.map((row, index) => (
                                     <tr
                                         key={row?.id}
-                                        style={{
-                                            borderBottom: "1px solid #D1D5DB",
-                                            lineHeight: "60px",
-                                            fontSize: "14px",
-                                            fontWeight: "400",
-                                            color: "#4B5563",
-                                            fontStyle: "normal",
-                                        }}
+                                        style={styles.tableBodyRow}
                                     >
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{index + 1}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{row?.title}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{formatDate(row?.startDate)}</td>
-                                        <td style={{ verticalAlign: "middle", fontSize: '14px', fontWeight: '400', color: '#4B5563', fontStyle: 'normal' }}>{formatDate(row?.endDate)}</td>
-                                        <td style={{ verticalAlign: "middle" }}>
+                                        <td style={styles.tableCell}>{index + 1}</td>
+                                        <td style={styles.tableCell}>{row?.title}</td>
+                                        <td style={styles.tableCell}>{formatDate(row?.startDate)}</td>
+                                        <td style={styles.tableCell}>{formatDate(row?.endDate)}</td>
+                                        <td style={styles.tableCell}>{row?.isScheduled ? formatDate(row?.scheduleDateTime) : 'None'}</td>
+                                        <td style={styles.tableCell}>
                                             {renderStatusDot(row?.status)} {row?.status === 'published' ? 'Active' : 'Draft'}
                                         </td>
-                                        <td
-                                            style={{
-                                                verticalAlign: "middle",
-                                            }}
-
-                                        >
+                                        <td style={styles.tableCell}>
                                             <img
                                                 src="/assets/view-btn.png"
                                                 alt="View Assignment"
-                                                style={{ width: '24px', height: '24px', cursor: "pointer", }}
+                                                style={styles.viewIcon}
                                                 onClick={() => navigate(`/TeacherAssignmentDetails/${sectionData?.id}/${row?.id}`)}
                                             />
                                         </td>
@@ -299,5 +215,158 @@ function Assignments() {
         </Container>
     );
 }
+
+const styles = {
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px',
+        paddingTop: '0px',
+        width: '100%',
+    },
+    headerLeft: {
+        display: 'flex',
+        alignItems: 'center',
+    },
+    backArrow: {
+        cursor: "pointer"
+    },
+    headerTitle: {
+        fontSize: '24px',
+        margin: 0,
+        fontWeight: '600',
+    },
+    headerRight: {
+        display: 'flex',
+        alignItems: 'center',
+    },
+    userImage: {
+        borderRadius: '50%',
+        width: '54px',
+        height: '54px',
+        marginRight: '10px',
+    },
+    userInfo: {
+        marginRight: '10px',
+    },
+    userName: {
+        fontWeight: '500',
+        fontSize: '14',
+    },
+    userTeacherId: {
+        fontSize: '12px',
+        color: '#6c757d',
+    },
+    dropdownButton: {
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+    },
+    dropdownIcon: {
+        width: '12px',
+        height: '12px',
+    },
+    subHeader: {
+        marginTop: "15px",
+    },
+    sectionBox: {
+        border: "1px solid #D1D5DB",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        cursor: "pointer",
+        backgroundColor: "white",
+        justifyContent: "center",
+        width: "auto",
+    },
+    sectionText: {
+        fontSize: "14px",
+        fontWeight: "600",
+    },
+    searchContainer: {
+        position: "relative",
+    },
+    searchInput: {
+        borderRadius: "8px",
+        paddingLeft: "40px",
+        fontSize: "14px",
+        fontWeight: "400",
+        color: "#98A2B3",
+        border: "1px solid #D1D5DB",
+        width: "300px",
+    },
+    searchIcon: {
+        position: "absolute",
+        top: "50%",
+        left: "12px",
+        transform: "translateY(-50%)",
+    },
+    createButton: {
+        backgroundColor: "#101828",
+        color: "white",
+        borderRadius: "8px",
+        fontSize: "14px",
+        fontWeight: "600",
+        padding: "8px 16px",
+        border: "none",
+    },
+    tableContainer: {
+        height: "750px",
+    },
+    tableScrollContainer: {
+        maxHeight: "690px",
+        overflowY: "auto",
+        overflowX: "auto",
+    },
+    table: {
+        color: "#4B5563",
+        fontFamily: "Inter",
+        fontSize: "16px",
+        fontWeight: "500",
+    },
+    tableHead: {
+        position: "sticky",
+        top: 0,
+        background: "#FFFFFF",
+        zIndex: 1,
+        fontStyle: "normal",
+        color: "#111827",
+        fontSize: "16px",
+        fontWeight: "500",
+        fontFamily: "Inter",
+    },
+    tableHeaderRow: {
+        fontSize: '16px',
+        fontWeight: '500',
+        color: '#111827',
+    },
+    tableBodyRow: {
+        borderBottom: "1px solid #D1D5DB",
+        lineHeight: "60px",
+        fontSize: "14px",
+        fontWeight: "400",
+        color: "#4B5563",
+        fontStyle: "normal",
+    },
+    tableCell: {
+        verticalAlign: "middle",
+        fontSize: '14px',
+        fontWeight: '400',
+        color: '#4B5563',
+        fontStyle: 'normal',
+    },
+    statusDot: {
+        height: "8px",
+        width: "8px",
+        borderRadius: "50%",
+        display: "inline-block",
+        marginRight: "8px",
+    },
+    viewIcon: {
+        width: '24px',
+        height: '24px',
+        cursor: "pointer",
+    },
+};
 
 export default Assignments;

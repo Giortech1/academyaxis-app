@@ -1,19 +1,14 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Container, Row, Col, Form, Button, Image } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 const FeesChallan = () => {
+    const { userData } = useContext(UserContext);
     const navigate = useNavigate();
 
     const [checkboxChecked, setCheckboxChecked] = useState(false);
-
-    // Mock data for payment summary and user details
-    const [userDetails] = useState({
-        name: "Jhon Deo",
-        id: "123456",
-        avatar: "/assets/avatar.jpeg",
-    });
 
     const [paymentDetails] = useState({
         monthlyFees: 40000,
@@ -36,7 +31,7 @@ const FeesChallan = () => {
                 <header className="d-flex justify-content-between align-items-center mb-4 mt-4">
                     <div id="feechallan" className="d-flex align-items-center">
                         <Image
-                        id="arrow-left"
+                            id="arrow-left"
                             src="/assets/arrow-left.png"
                             roundedCircle
                             width={24}
@@ -53,8 +48,8 @@ const FeesChallan = () => {
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <img
-                        id="info-img"
-                            src={userDetails.avatar}
+                            id="info-img"
+                            src={userData?.profile_pic || "/assets/avatar.jpeg"}
                             alt="User"
                             style={{
                                 borderRadius: "50%",
@@ -64,8 +59,8 @@ const FeesChallan = () => {
                             }}
                         />
                         <div style={{ marginRight: "10px" }}>
-                            <div style={{ fontWeight: "500", fontSize: "14px" }}>{userDetails.name}</div>
-                            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userDetails.id}</div>
+                            <div style={{ fontWeight: "500", fontSize: "14px" }}>{userData?.fulll_name}</div>
+                            <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}</div>
                         </div>
                     </div>
                 </header>
@@ -228,13 +223,13 @@ const FeesChallan = () => {
                     </Col>
                 </Row>
 
-                <Row style={{width:'95%', justifyContent:'center', alignItems:'center', display:'flex', marginLeft:'2px'}}>
+                <Row style={{ width: '95%', justifyContent: 'center', alignItems: 'center', display: 'flex', marginLeft: '2px' }}>
                     <Col
                         style={{
                             border: "1px solid #E5E7EB",
                             borderRadius: "12px",
                             padding: "10px",
-                            
+
                         }}
                     >
                         <Col className="d-flex align-items-center justify-content-between  bg-light ">

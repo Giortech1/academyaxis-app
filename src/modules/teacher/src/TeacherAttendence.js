@@ -145,7 +145,7 @@ function Attendance() {
                                     : "John Doe"}
                             </div>
                             <div className="user-id">
-                                {userData?.teacher_id || userData?.student_id || "123456"}
+                                {userData?.teacher_id}
                             </div>
                         </div>
                         <button className="dropdown-btn">

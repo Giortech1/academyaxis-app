@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import { Container, Button, Form, Table, Row, Col, Nav, Spinner, Alert, Dropdown } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 // Mock data for paid students
 const MOCK_PAID_DATA = {
@@ -167,6 +168,7 @@ const formatCurrency = (amount) => {
 };
 
 function FeesCollected() {
+  const { userData } = useContext(UserContext);
   const navigate = useNavigate();
   
   // State variables
@@ -293,13 +295,13 @@ function FeesCollected() {
           </div>
           <div className="d-flex align-items-center">
             <img
-              src="/assets/avatar.png"
+              src={userData?.profile_pic || "/assets/avatar.jpeg"}
               alt="User"
               style={{ borderRadius: "50%", width: "54px", height: "54px", marginRight: "10px" }}
             />
             <div style={{ marginRight: "10px" }}>
-              <div style={{ fontWeight: "500", fontSize: "14" }}>Zuhran Ahmad</div>
-              <div style={{ fontSize: "12px", color: "#6c757d" }}>14785200</div>
+              <div style={{ fontWeight: "500", fontSize: "14" }}>{userData?.full_name}</div>
+              <div style={{ fontSize: "12px", color: "#6c757d" }}>{userData?.admin_id}0</div>
             </div>
           </div>
         </header>
