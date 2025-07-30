@@ -1,0 +1,152 @@
+# Dockerfile.multi-tenant
+# Multi-tenant version of AcademyAxis for global school deployment
+
+# Use the official Node.js runtime as the base image
+FROM node:18-alpine
+
+# Build arguments for multi-tenancy and regional deployment
+ARG REGION=africa
+ARG ENVIRONMENT=dev
+ARG GCP_PROJECT
+ARG GCP_REGION=europe-west1
+ARG BUILD_DATE
+ARG GIT_COMMIT
+ARG GIT_BRANCH
+
+# Set build-time labels for container metadata
+LABEL org.opencontainers.image.title="AcademyAxis Multi-Tenant Platform"
+LABEL org.opencontainers.image.description="Global education platform serving schools worldwide with multi-tenant architecture"
+LABEL org.opencontainers.image.vendor="AcademyAxis.io"
+LABEL org.opencontainers.image.version="${GIT_COMMIT}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.source="https://github.com/YourOrg/academyaxis-app"
+LABEL academyaxis.region="${REGION}"
+LABEL academyaxis.environment="${ENVIRONMENT}"
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy package files first for better Docker layer caching
+COPY package*.json ./
+
+# Install production dependencies only with npm audit disabled for faster builds
+RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
+
+# Install additional dependencies for multi-tenant features
+RUN npm install \
+    @google-cloud/firestore@^7.1.0 \
+    @google-cloud/storage@^7.7.0 \
+    @google-cloud/secret-manager@^5.0.1 \
+    firebase-admin@^12.0.0 \
+    i18next@^23.7.16 \
+    react-i18next@^14.0.0 \
+    --omit=dev --no-audit --no-fund
+
+# Create a non-root user to run the application
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S academyaxis -u 1001
+
+# Create necessary directories for multi-tenant features
+RUN mkdir -p /app/data/schools \
+    /app/data/global-parents \
+    /app/logs \
+    /app/temp \
+    && chown -R academyaxis:nodejs /app/data /app/logs /app/temp
+
+# Copy application files with proper ownership
+COPY --chown=academyaxis:nodejs . .
+
+# Set runtime environment variables for multi-tenancy
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV PLATFORM_NAME=academyaxis
+ENV MULTI_TENANT=true
+
+# Region-specific environment variables
+ENV REACT_APP_REGION=${REGION}
+ENV REACT_APP_ENVIRONMENT=${ENVIRONMENT}
+ENV REACT_APP_GCP_PROJECT=${GCP_PROJECT}
+ENV REACT_APP_GCP_REGION=${GCP_REGION}
+
+# Cameroon/Africa-specific configurations
+ENV REACT_APP_SUPPORTED_LANGUAGES=fr-CM,en-CM
+ENV REACT_APP_DEFAULT_LANGUAGE=fr-CM
+ENV REACT_APP_DEFAULT_CURRENCY=XAF
+ENV REACT_APP_DEFAULT_TIMEZONE=Africa/Douala
+
+# Multi-tenant feature flags
+ENV FEATURE_CROSS_SCHOOL_PARENTS=true
+ENV FEATURE_SCHOOL_ISOLATION=true
+ENV FEATURE_REGIONAL_COMPLIANCE=true
+ENV FEATURE_BILINGUAL_SUPPORT=true
+
+# Regional payment and communication providers
+ENV PAYMENT_PROVIDERS_AFRICA=orange_money,mtn_momo,express_union
+ENV SMS_PROVIDER_AFRICA=africa_talking
+ENV EMAIL_PROVIDER=sendgrid
+
+# Security and performance configurations
+ENV JWT_ALGORITHM=HS256
+ENV SESSION_TIMEOUT=3600
+ENV RATE_LIMIT_REQUESTS=1000
+ENV RATE_LIMIT_WINDOW=900000
+
+# Logging configuration
+ENV LOG_LEVEL=info
+ENV LOG_FORMAT=json
+ENV LOG_DESTINATION=/app/logs/app.log
+
+# Health check configuration
+ENV HEALTH_CHECK_INTERVAL=30
+ENV HEALTH_CHECK_TIMEOUT=10
+
+# Switch to non-root user for security
+USER academyaxis
+
+# Expose the port the app runs on (Cloud Run uses PORT env var)
+EXPOSE 8080
+
+# Add health check for better container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD node -e "const http = require('http'); \
+    const options = { \
+        hostname: 'localhost', \
+        port: process.env.PORT || 8080, \
+        path: '/health', \
+        timeout: 5000 \
+    }; \
+    const req = http.request(options, (res) => { \
+        if (res.statusCode === 200) { \
+            process.exit(0); \
+        } else { \
+            process.exit(1); \
+        } \
+    }); \
+    req.on('error', () => process.exit(1)); \
+    req.on('timeout', () => process.exit(1)); \
+    req.end();"
+
+# Create startup script for multi-tenant initialization
+RUN echo '#!/bin/sh\n\
+echo "🚀 Starting AcademyAxis Multi-Tenant Platform"\n\
+echo "Region: $REACT_APP_REGION"\n\
+echo "Environment: $REACT_APP_ENVIRONMENT"\n\
+echo "GCP Project: $REACT_APP_GCP_PROJECT"\n\
+echo "Languages: $REACT_APP_SUPPORTED_LANGUAGES"\n\
+echo "Currency: $REACT_APP_DEFAULT_CURRENCY"\n\
+echo "Multi-Tenant Features: $FEATURE_CROSS_SCHOOL_PARENTS"\n\
+\n\
+# Initialize region-specific configurations\n\
+if [ "$REACT_APP_REGION" = "africa" ]; then\n\
+    echo "🇨🇲 Initializing Cameroon-specific features"\n\
+    echo "Payment providers: $PAYMENT_PROVIDERS_AFRICA"\n\
+    echo "SMS provider: $SMS_PROVIDER_AFRICA"\n\
+    echo "Bilingual support: Enabled (French/English)"\n\
+fi\n\
+\n\
+# Start the application\n\
+exec npm start' > /app/start-multi-tenant.sh \
+    && chmod +x /app/start-multi-tenant.sh
+
+# Define the command to run the application with multi-tenant initialization
+CMD ["/app/start-multi-tenant.sh"]

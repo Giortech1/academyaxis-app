@@ -1,0 +1,253 @@
+import React, { useState, useEffect, useContext } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { FiMenu, FiX } from "react-icons/fi";
+import Leftside from "./Leftside";
+import Quizzes from "./Quizzes";
+import Assignments from "./Assignments";
+import Exams from "./Exams";
+import Mycourse from "./Mycourse";
+import AssignmentDetails from "./AssignmentDetails";
+import Coursedetails from "./Coursedetails";
+import Chats from "./Chats";
+import Feechallan from "./Feechallan";
+import Feechallandetail from "./Feechallandetail";
+import Paywithcard from "./Paywithcard";
+import Grades from "./Grades";
+import SubGrades from "./SubGrades";
+import CalendarScreen from "./CalendarScreen";
+import Dashboard from "./Dashboard";
+import NewsAndAnnoucements from "./NewsAndAnnoucements";
+import Settings from "./Settings";
+import Examsyllabus from './Examsyllabus';
+import InprogressCourse from './InprogressCourse';
+import PastCourse from './PastCourse';
+import Withdraw from './Withdraw';
+import Enrollement from './Enrollement';
+import EnrollementCourse from "./EnrollementCourse";
+import StudentProfile from "./StudentProfile";
+import QuizDetail from "./QuizDetail";
+import StudentTranscript from './StudentTranscript';
+import FeesSlip from './FeesSlip';
+import SlipDetails from './SlipDetails';
+import AcademicCalendar from './AcademicCalendar';
+import Login from "./SignIn";
+import TimeTable from "./TimeTable";
+
+function MainComponent() {
+  const [activeButton, setActiveButton] = useState(1);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAuthPage =
+    location.pathname === "/" ||
+    location.pathname === "/signup" ||
+    location.pathname === "/login" ||
+    location.pathname === "/sign-in";
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isSmall = window.innerWidth < 1000;
+      setIsSmallScreen(isSmall);
+
+      if (isAuthPage) {
+        setIsSidebarVisible(false);
+      } else {
+        setIsSidebarVisible(!isSmall);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isAuthPage]);
+
+  const toggleSidebar = () => {
+    if (!isAuthPage) {
+      setIsSidebarVisible(!isSidebarVisible);
+    }
+  };
+
+  const handleClick = () => {
+    navigate("/dashboard");
+  };
+
+  return (
+    <div className="d-flex" style={{ height: "100vh", overflow: "hidden" }}>
+      {/* Sidebar */}
+      <style>{`
+        .sidebar-container {
+          height: 100vh !important; /* Changed from min-height to height */
+          overflow-y: auto; /* Allow internal scrolling if needed */
+        }
+        
+        @media (max-width: 1000px) {
+          .sidebar-container {
+            width: 280px;
+            height: 100vh;
+            background-color: #101828;
+            position: fixed;
+            top: 0;
+            left: 0;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+          }
+          
+          #quizes {
+            height: auto !important;
+          }
+  
+          .mobile-sidebar.hidden {
+            transform: translateX(-100%);
+          }
+  
+          .mobile-sidebar.visible {
+            transform: translateX(0);
+          }
+  
+          .sidebar-overlay {
+            backdrop-filter: blur(2px);
+          }
+  
+          body.no-scroll {
+            overflow: hidden;
+          }
+        }
+        
+        /* Ensure main content area doesn't overflow */
+        .main-content-area {
+          height: 100vh;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+        
+        /* Mobile header should not add to total height */
+        .mobile-header {
+          flex-shrink: 0;
+        }
+        
+        /* Routes container should fill remaining space */
+        .routes-container {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0; /* Important for flex child */
+        }
+      `}</style>
+
+      {!isAuthPage && (
+        <div
+          className={`sidebar-container ${isSmallScreen ? "mobile-sidebar" : ""} ${isSidebarVisible ? "visible" : "hidden"}`}
+          style={{
+            position: isSmallScreen ? "fixed" : "static",
+            zIndex: 2000,
+            transition: "transform 0.3s ease-in-out",
+            transform: isSidebarVisible ? "translateX(0)" : "translateX(-100%)",
+          }}
+        >
+          <Leftside
+            isSidebarVisible={isSidebarVisible}
+            activeButton={activeButton}
+            setActiveButton={setActiveButton}
+            isSmallScreen={isSmallScreen}
+            toggleSidebar={toggleSidebar}
+          />
+        </div>
+      )}
+
+      {/* Mobile overlay */}
+      {!isAuthPage && isSmallScreen && isSidebarVisible && (
+        <div
+          className="sidebar-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 1000,
+          }}
+          onClick={toggleSidebar}
+        />
+      )}
+
+      {/* Main content */}
+      <div className="main-content-area" style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column" }}>
+        {/* Hamburger button for mobile */}
+        {!isAuthPage && isSmallScreen && (
+          <div
+            className="mobile-header"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "15px 20px",
+              position: "relative",
+              backgroundColor: "#101828",
+            }}
+          >
+            {/* Logo */}
+            <div className="mb-0 text-start ps-0" onClick={handleClick} style={{ cursor: "pointer" }}>
+              <img
+                src="/assets/logo.png"
+                alt="Logo"
+                style={{ objectFit: 'contain', maxHeight: "30px" }}
+              />
+            </div>
+
+            {/* Hamburger on the right */}
+            <button
+              onClick={toggleSidebar}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "24px",
+                color: "white",
+              }}
+            >
+              {isSidebarVisible ? <FiX /> : <FiMenu />}
+            </button>
+          </div>
+        )}
+
+        <div className="routes-container">
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/quizzes" element={<Quizzes />} />
+            <Route path="/assignments" element={<Assignments />} />
+            <Route path="/exams" element={<Exams />} />
+            <Route path="/mycourse" element={<Mycourse />} />
+            <Route path="/assignments/details/:id" element={<AssignmentDetails />} />
+            <Route path="/quizzes/details/:id" element={<QuizDetail />} />
+            <Route path="/coursedetails" element={<Coursedetails />} />
+            <Route path="/chats" element={<Chats />} />
+            <Route path="/feechallan" element={<Feechallan />} />
+            <Route path="/feechallandetail" element={<Feechallandetail />} />
+            <Route path="/paywithcard" element={<Paywithcard />} />
+            <Route path="/Grades" element={<Grades />} />
+            <Route path="/SubGrades" element={<SubGrades />} />
+            <Route path="/calendarscreen" element={<CalendarScreen />} />
+            <Route path="/timetable" element={<TimeTable />} />
+            <Route path="/news-and-announcements" element={<NewsAndAnnoucements />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/exam-syllabus" element={<Examsyllabus />} />
+            <Route path="/InprogressCourse" element={<InprogressCourse />} />
+            <Route path="/PastCourse" element={<PastCourse />} />
+            <Route path="/Withdraw" element={<Withdraw />} />
+            <Route path="/enrollement" element={<Enrollement />} />
+            <Route path="/enrollementcourse" element={<EnrollementCourse />} />
+            <Route path="/studentprofile" element={<StudentProfile />} />
+            <Route path="/assignment-detail/:id" element={<AssignmentDetails />} />
+            <Route path="/student-transcript" element={<StudentTranscript />} />
+            <Route path="/payment-success" element={<FeesSlip />} />
+            <Route path="/slip-details" element={<SlipDetails />} />
+            <Route path="/academycalendar" element={<AcademicCalendar />} />
+          </Routes>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default MainComponent;
