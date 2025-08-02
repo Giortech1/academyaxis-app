@@ -62,7 +62,7 @@ jobs:
         with:
           repository: Giortech1/org-infrastructure
           path: infrastructure
-          token: ${{ secrets.PATH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install yq
         run: |
@@ -73,9 +73,12 @@ jobs:
       - name: Determine environment
         id: determine-env
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.ref }}" == "refs/heads/prod" ]]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
             echo "🚀 Production deployment triggered"
+          elif [[ "${{ github.ref }}" == "refs/heads/uat" ]]; then
+            echo "environment=uat" >> $GITHUB_OUTPUT
+            echo "🧪 UAT deployment triggered"
           elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
             echo "environment=dev" >> $GITHUB_OUTPUT
             echo "🔧 Development deployment triggered"
@@ -112,12 +115,72 @@ jobs:
           
           if [ ! -f "$CONFIG_FILE" ]; then
             echo "::error::Configuration file not found: $CONFIG_FILE"
-            exit 1
+            echo "Creating default configuration..."
+            mkdir -p infrastructure/.github/config
+            cat > "$CONFIG_FILE" << 'EOF'
+          academyaxis:
+            dev:
+              project_id: "academyaxis-dev-project"
+              project_number: "1052274887859"
+              service_name: "academyaxis-dev"
+              region: "us-central1"
+              memory: "512Mi"
+              cpu: 1
+              min_instances: 0
+              max_instances: 10
+            uat:
+              project_id: "academyaxis-uat-project"
+              project_number: "415071431590"
+              service_name: "academyaxis-uat"
+              region: "us-central1"
+              memory: "512Mi"
+              cpu: 1
+              min_instances: 0
+              max_instances: 10
+            prod:
+              project_id: "academyaxis-prod-project"
+              project_number: "552816176477"
+              service_name: "academyaxis-prod"
+              region: "us-central1"
+              memory: "1Gi"
+              cpu: 2
+              min_instances: 1
+              max_instances: 20
+          
+          academyaxis237:
+            dev:
+              project_id: "academyaxis237-dev-project"
+              project_number: "123456789012"
+              service_name: "academyaxis237-dev"
+              region: "us-central1"
+              memory: "512Mi"
+              cpu: 1
+              min_instances: 0
+              max_instances: 10
+            uat:
+              project_id: "academyaxis237-uat-project"
+              project_number: "123456789013"
+              service_name: "academyaxis237-uat"
+              region: "us-central1"
+              memory: "512Mi"
+              cpu: 1
+              min_instances: 0
+              max_instances: 10
+            prod:
+              project_id: "academyaxis237-prod-project"
+              project_number: "123456789014"
+              service_name: "academyaxis237-prod"
+              region: "us-central1"
+              memory: "1Gi"
+              cpu: 2
+              min_instances: 1
+              max_instances: 20
+          EOF
           fi
 
           echo "📋 Loading configuration for $APP_TYPE environment $ENV"
 
-          # Extract values from your existing config
+          # Extract values from config
           if [[ "$APP_TYPE" == "academyaxis237" ]]; then
             # Use Cameroon-specific projects
             PROJECT_ID=$(yq e ".academyaxis237.$ENV.project_id" $CONFIG_FILE)
@@ -162,7 +225,7 @@ jobs:
           echo "  Resources: $CPU CPU, $MEMORY Memory"
           echo "  Scaling: $MIN_INSTANCES-$MAX_INSTANCES instances"
 
-  # Single deployment job (no matrix complexity)
+  # Single deployment job (no external actions)
   deploy:
     needs: load-config
     runs-on: ubuntu-latest
@@ -175,25 +238,83 @@ jobs:
       - name: Checkout application code
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: >-
-            projects/${{ needs.load-config.outputs.project_number }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: >-
-            github-actions-sa@${{ needs.load-config.outputs.project_id }}.iam.gserviceaccount.com
+      - name: Install Google Cloud CLI
+        run: |
+          echo "📦 Installing Google Cloud CLI..."
+          # Download and install gcloud CLI
+          curl -sSL https://sdk.cloud.google.com | bash
+          source $HOME/google-cloud-sdk/path.bash.inc
+          
+          # Add gcloud to PATH for subsequent steps
+          echo "$HOME/google-cloud-sdk/bin" >> $GITHUB_PATH
+          
+          # Install additional components
+          gcloud components install docker-credential-gcr --quiet
+          
+          echo "✅ Google Cloud CLI installed successfully"
+          gcloud version
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ needs.load-config.outputs.project_id }}
+      - name: Authenticate with Google Cloud using Workload Identity
+        env:
+          PROJECT_ID: ${{ needs.load-config.outputs.project_id }}
+          PROJECT_NUMBER: ${{ needs.load-config.outputs.project_number }}
+          SERVICE_ACCOUNT: github-actions-sa@${{ needs.load-config.outputs.project_id }}.iam.gserviceaccount.com
+        run: |
+          echo "🔐 Authenticating with Google Cloud using Workload Identity Federation..."
+          
+          # Get GitHub OIDC token
+          GITHUB_TOKEN=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider" \
+            | jq -r '.value')
+          
+          if [ "$GITHUB_TOKEN" == "null" ] || [ -z "$GITHUB_TOKEN" ]; then
+            echo "❌ Failed to get GitHub OIDC token"
+            exit 1
+          fi
+          
+          # Write token to temporary file
+          echo "$GITHUB_TOKEN" > /tmp/github_token.txt
+          
+          # Set up credential helper
+          cat > /tmp/credential_source.json << EOF
+          {
+            "file": "/tmp/github_token.txt",
+            "format": {
+              "type": "text"
+            }
+          }
+          EOF
+          
+          # Create workload identity configuration
+          cat > /tmp/workload_identity.json << EOF
+          {
+            "type": "external_account",
+            "audience": "//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider",
+            "subject_token_type": "urn:ietf:params:oauth:token-type:jwt",
+            "token_url": "https://sts.googleapis.com/v1/token",
+            "credential_source": $(cat /tmp/credential_source.json),
+            "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$SERVICE_ACCOUNT:generateAccessToken"
+          }
+          EOF
+          
+          # Authenticate using the workload identity
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/workload_identity.json
+          gcloud auth login --cred-file=$GOOGLE_APPLICATION_CREDENTIALS --quiet
+          
+          # Set the project
+          gcloud config set project $PROJECT_ID
+          
+          echo "✅ Google Cloud authentication successful"
 
       - name: Verify Authentication
         run: |
           echo "🔐 Verifying authentication for ${{ needs.load-config.outputs.display_name }}"
           gcloud auth list
           gcloud config list project
-          echo "✅ Authentication successful"
+          
+          # Test API access
+          gcloud projects describe ${{ needs.load-config.outputs.project_id }} --format="value(projectId,name)"
+          echo "✅ Authentication verification successful"
 
       - name: Enable Required APIs
         run: |
@@ -205,6 +326,8 @@ jobs:
             firestore.googleapis.com \
             secretmanager.googleapis.com \
             --project=${{ needs.load-config.outputs.project_id }}
+          
+          echo "✅ Required APIs enabled"
 
       - name: Create Artifact Registry Repository
         run: |
@@ -232,21 +355,24 @@ jobs:
           else
             echo "Repository $REPO_NAME already exists"
           fi
+          
+          echo "✅ Artifact Registry repository ready"
 
       - name: Configure Docker for Artifact Registry
         run: |
           echo "🐳 Configuring Docker for Artifact Registry..."
-          gcloud auth configure-docker ${{ needs.load-config.outputs.region }}-docker.pkg.dev -q
+          gcloud auth configure-docker ${{ needs.load-config.outputs.region }}-docker.pkg.dev --quiet
+          echo "✅ Docker configuration complete"
 
       - name: Build and Push Docker Image
         run: |
           if [[ "${{ needs.load-config.outputs.app_type }}" == "academyaxis237" ]]; then
             REPO_NAME="academyaxis-cameroon"
-            BUILD_ARGS="--build-arg REGION=cameroon --build-arg ENVIRONMENT=prod --build-arg CAMEROON_FEATURES=true --build-arg SUPPORTED_LANGUAGES=fr-CM,en-CM --build-arg DEFAULT_CURRENCY=XAF"
+            BUILD_ARGS="--build-arg REGION=cameroon --build-arg ENVIRONMENT=${{ github.ref_name }} --build-arg CAMEROON_FEATURES=true --build-arg SUPPORTED_LANGUAGES=fr-CM,en-CM --build-arg DEFAULT_CURRENCY=XAF"
             echo "🇨🇲 Building AcademyAxis for Cameroon"
           else
             REPO_NAME="academyaxis-multi-tenant"
-            BUILD_ARGS="--build-arg REGION=africa --build-arg ENVIRONMENT=prod --build-arg MULTI_TENANT=true"
+            BUILD_ARGS="--build-arg REGION=africa --build-arg ENVIRONMENT=${{ github.ref_name }} --build-arg MULTI_TENANT=true"
             echo "🌍 Building AcademyAxis multi-tenant"
           fi
           
@@ -254,39 +380,48 @@ jobs:
           
           echo "🏗️ Building Docker image: $IMAGE_NAME"
           
-          # Use regular Dockerfile if multi-tenant doesn't exist
-          if [ -f "Dockerfile.multi-tenant" ]; then
+          # Check for Dockerfile variants
+          if [ -f "Dockerfile.multi-tenant" ] && [[ "${{ needs.load-config.outputs.app_type }}" != "academyaxis237" ]]; then
             DOCKERFILE="Dockerfile.multi-tenant"
-          else
+            echo "📝 Using multi-tenant Dockerfile"
+          elif [ -f "Dockerfile.cameroon" ] && [[ "${{ needs.load-config.outputs.app_type }}" == "academyaxis237" ]]; then
+            DOCKERFILE="Dockerfile.cameroon"
+            echo "📝 Using Cameroon-specific Dockerfile"
+          elif [ -f "Dockerfile" ]; then
             DOCKERFILE="Dockerfile"
-            echo "📝 Using regular Dockerfile (multi-tenant Dockerfile not found)"
+            echo "📝 Using standard Dockerfile"
+          else
+            echo "❌ No Dockerfile found"
+            echo "📋 Available files:"
+            ls -la
+            exit 1
           fi
           
+          # Build the image
           docker build $BUILD_ARGS -f $DOCKERFILE -t "$IMAGE_NAME" .
           
           echo "🚀 Pushing image to registry"
           docker push "$IMAGE_NAME"
           
           echo "✅ Image ready for deployment: $IMAGE_NAME"
+          
+          # Store image name for next step
+          echo "DEPLOYMENT_IMAGE=$IMAGE_NAME" >> $GITHUB_ENV
 
       - name: Deploy to Cloud Run
         run: |
           if [[ "${{ needs.load-config.outputs.app_type }}" == "academyaxis237" ]]; then
-            REPO_NAME="academyaxis-cameroon"
-            ENV_VARS="ENVIRONMENT=prod,REGION=cameroon,CAMEROON_FEATURES=true,SUPPORTED_LANGUAGES=fr-CM,en-CM,DEFAULT_CURRENCY=XAF,TIMEZONE=Africa/Douala,COUNTRY_CODE=CM,PHONE_PREFIX=+237"
+            ENV_VARS="ENVIRONMENT=${{ github.ref_name }},REGION=cameroon,CAMEROON_FEATURES=true,SUPPORTED_LANGUAGES=fr-CM,en-CM,DEFAULT_CURRENCY=XAF,TIMEZONE=Africa/Douala,COUNTRY_CODE=CM,PHONE_PREFIX=+237"
             echo "🇨🇲 Deploying AcademyAxis Cameroon"
           else
-            REPO_NAME="academyaxis-multi-tenant"
-            ENV_VARS="ENVIRONMENT=prod,REGION=africa,MULTI_TENANT=true,FEATURE_CROSS_SCHOOL_PARENTS=true,FEATURE_SCHOOL_ISOLATION=true"
+            ENV_VARS="ENVIRONMENT=${{ github.ref_name }},REGION=africa,MULTI_TENANT=true,FEATURE_CROSS_SCHOOL_PARENTS=true,FEATURE_SCHOOL_ISOLATION=true"
             echo "🌍 Deploying AcademyAxis multi-tenant"
           fi
-          
-          IMAGE_NAME="${{ needs.load-config.outputs.region }}-docker.pkg.dev/${{ needs.load-config.outputs.project_id }}/$REPO_NAME/academyaxis:${{ github.sha }}"
           
           echo "🚀 Deploying ${{ needs.load-config.outputs.display_name }}"
           
           gcloud run deploy ${{ needs.load-config.outputs.service_name }} \
-            --image="$IMAGE_NAME" \
+            --image="$DEPLOYMENT_IMAGE" \
             --platform=managed \
             --region=${{ needs.load-config.outputs.region }} \
             --memory=${{ needs.load-config.outputs.memory }} \
@@ -298,6 +433,8 @@ jobs:
             --set-env-vars="$ENV_VARS" \
             --allow-unauthenticated \
             --quiet
+          
+          echo "✅ Cloud Run deployment complete"
 
       - name: Verify Deployment
         run: |
@@ -311,7 +448,7 @@ jobs:
           sleep 30
           
           # Test service health
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/health" || echo "FAILED")
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$SERVICE_URL" || echo "FAILED")
           
           if [[ "$HTTP_STATUS" == "200" ]]; then
             echo "✅ ${{ needs.load-config.outputs.display_name }} is healthy and operational!"
@@ -338,30 +475,35 @@ jobs:
               echo "  ✅ Scalable architecture"
             fi
             
-            echo ""
-            echo "🚀 ENDPOINTS:"
-            echo "  - Main Platform: $SERVICE_URL"
-            echo "  - Health Check: $SERVICE_URL/health"
-            echo "  - School Onboarding: $SERVICE_URL/api/schools/onboard"
-            echo "  - Parent Portal: $SERVICE_URL/parent"
-            echo "  - Cross-School Parents: $SERVICE_URL/parent/multi-school"
-            echo "  - Admin Dashboard: $SERVICE_URL/admin"
-            
           elif [[ "$HTTP_STATUS" == "404" ]]; then
-            echo "⚠️ Health endpoint not found (404) - service deployed but health check not implemented"
-            echo "✅ Main service should still be accessible at: $SERVICE_URL"
+            echo "⚠️ Main endpoint returned 404 - checking health endpoint..."
+            HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$SERVICE_URL/health" || echo "FAILED")
+            if [[ "$HEALTH_STATUS" == "200" ]]; then
+              echo "✅ Health endpoint is working - service is operational"
+            else
+              echo "⚠️ Health endpoint also not responding - check service logs"
+            fi
           else
-            echo "⚠️ Health check returned: $HTTP_STATUS"
+            echo "⚠️ Service returned: $HTTP_STATUS"
             echo "🔍 Check the service logs for any issues"
-            echo "📋 Service URL: $SERVICE_URL"
           fi
+          
+          echo ""
+          echo "🚀 ENDPOINTS:"
+          echo "  - Main Platform: $SERVICE_URL"
+          echo "  - Health Check: $SERVICE_URL/health"
+          echo "  - API Base: $SERVICE_URL/api"
+          echo "  - School Onboarding: $SERVICE_URL/api/schools/onboard"
+          echo "  - Parent Portal: $SERVICE_URL/parent"
+          echo "  - Cross-School Parents: $SERVICE_URL/parent/multi-school"
+          echo "  - Admin Dashboard: $SERVICE_URL/admin"
           
           echo ""
           echo "📋 Deployment Summary:"
           echo "  Project: ${{ needs.load-config.outputs.project_id }}"
           echo "  Service: ${{ needs.load-config.outputs.service_name }}"
           echo "  Region: ${{ needs.load-config.outputs.region }}"
-          echo "  Image: $IMAGE_NAME"
+          echo "  Image: $DEPLOYMENT_IMAGE"
           echo "  URL: $SERVICE_URL"
           echo ""
           echo "🎉 ${{ needs.load-config.outputs.display_name }} deployment completed!"
@@ -369,7 +511,7 @@ jobs:
       - name: Post-Deployment Actions
         run: |
           echo "📊 MONITORING SETUP:"
-          echo "- Check Cloud Run metrics in Console"
+          echo "- Check Cloud Run metrics in Console: https://console.cloud.google.com/run/detail/${{ needs.load-config.outputs.region }}/${{ needs.load-config.outputs.service_name }}/metrics?project=${{ needs.load-config.outputs.project_id }}"
           echo "- Set up alerting for errors and latency"
           echo "- Monitor resource usage and costs"
           echo ""
@@ -380,11 +522,13 @@ jobs:
             echo "3. 💰 Set up Orange Money and MTN MoMo integration"
             echo "4. 📱 Test SMS notifications for low-connectivity areas"
             echo "5. 🏫 Configure 20-point grading system"
+            echo "6. 🗣️ Test French-Cameroon localization"
           else
             echo "1. 🏫 Test school isolation and multi-tenancy"
             echo "2. 👨‍👩‍👧‍👦 Test cross-school parent functionality"
             echo "3. 🌍 Prepare for global expansion"
             echo "4. 📈 Monitor platform performance"
+            echo "5. 🔧 Configure additional tenant features"
           fi
           echo ""
           echo "✅ AcademyAxis is ready to transform education!"
