@@ -1,32 +1,53 @@
 {
-  "name": "my-first-react-app",
-  "version": "0.1.0",
+  "name": "academyaxis-multi-tenant",
+  "version": "1.0.0",
   "private": true,
+  "description": "Multi-tenant education platform serving schools worldwide",
   "dependencies": {
+    "@google-cloud/firestore": "^7.11.3",
+    "@google-cloud/secret-manager": "^5.6.0",
+    "@google-cloud/storage": "^7.16.0",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.7",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
     "cra-template": "1.2.0",
+    "currency.js": "^2.0.4",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "firebase": "^10.14.1",
+    "firebase-admin": "^12.7.0",
+    "helmet": "^7.1.0",
     "html2canvas": "^1.4.1",
-    "i18next": "^25.3.2",
+    "i18next": "^23.16.8",
     "jspdf": "^3.0.1",
+    "lodash": "^4.17.21",
+    "moment-timezone": "^0.5.44",
+    "morgan": "^1.10.0",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.6",
     "react-calendar": "^5.1.0",
     "react-chartjs-2": "^5.2.0",
     "react-circular-progressbar": "^2.1.0",
     "react-dom": "^18.3.1",
+    "react-i18next": "^14.1.3",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.0.2",
     "react-scripts": "5.0.1",
     "react-toastify": "^11.0.5",
+    "serve": "^14.2.1",
     "styled-components": "^6.1.13",
+    "uuid": "^9.0.1",
     "web-vitals": "^4.2.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "start:africa": "REACT_APP_REGION=africa react-scripts start",
+    "build:africa": "REACT_APP_REGION=africa REACT_APP_SUPPORTED_LANGUAGES=fr-CM,en-CM npm run build",
+    "start:server": "node server.js"
   },
   "eslintConfig": {
     "extends": [
@@ -45,5 +66,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@types/lodash": "^4.17.20",
+    "@types/uuid": "^10.0.0"
   }
 }

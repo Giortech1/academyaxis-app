@@ -1,7 +1,7 @@
+import { auth, db, storage } from "./firebaseConfig";
 import React, { createContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, getDocs, collection, updateDoc, arrayUnion, setDoc, deleteDoc, addDoc, where, query, orderBy, serverTimestamp, onSnapshot, increment } from 'firebase/firestore';
-import { auth, db } from './firebaseConfig';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
