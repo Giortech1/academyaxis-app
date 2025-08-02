@@ -2,25 +2,28 @@
   "name": "academyaxis-multi-tenant",
   "version": "1.0.0",
   "private": true,
-  "description": "Multi-tenant education platform serving schools worldwide with cross-school parent functionality",
-  "keywords": ["education", "multi-tenant", "schools", "cameroon", "africa"],
-  "homepage": "https://academyaxis.io",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/YourOrg/academyaxis-app.git"
-  },
+  "description": "Multi-tenant education platform serving schools worldwide",
   "dependencies": {
     "@google-cloud/firestore": "^7.11.3",
     "@google-cloud/secret-manager": "^5.6.0",
     "@google-cloud/storage": "^7.16.0",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.7",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
     "cra-template": "1.2.0",
+    "currency.js": "^2.0.4",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "firebase": "^10.14.1",
     "firebase-admin": "^12.7.0",
+    "helmet": "^7.1.0",
     "html2canvas": "^1.4.1",
     "i18next": "^23.16.8",
     "jspdf": "^3.0.1",
     "lodash": "^4.17.21",
+    "moment-timezone": "^0.5.44",
+    "morgan": "^1.10.0",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.6",
     "react-calendar": "^5.1.0",
@@ -32,124 +35,31 @@
     "react-router-dom": "^7.0.2",
     "react-scripts": "5.0.1",
     "react-toastify": "^11.0.5",
+    "serve": "^14.2.1",
     "styled-components": "^6.1.13",
     "uuid": "^9.0.1",
-    "web-vitals": "^4.2.4",
-    
-    "_comment_new_dependencies": "🚀 New dependencies for multi-tenant and Cameroon features",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
-    "morgan": "^1.10.0",
-    "express-rate-limit": "^7.1.5",
-    "compression": "^1.7.4",
-    "dotenv": "^16.3.1",
-    "express-validator": "^7.0.1",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "moment-timezone": "^0.5.44",
-    "i18next-fs-backend": "^2.3.1",
-    "i18next-http-middleware": "^3.5.0",
-    "react-query": "^3.39.3",
-    "zustand": "^4.4.7",
-    "react-hook-form": "^7.48.2",
-    "yup": "^1.4.0",
-    "country-list": "^2.3.0",
-    "libphonenumber-js": "^1.10.51",
-    "currency.js": "^2.0.4",
-    "date-fns": "^2.30.0",
-    "date-fns-tz": "^2.0.0"
+    "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "_comment_original": "📝 Original React scripts maintained",
     "start": "react-scripts start",
-    "build": "react-scripts build", 
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-
-    "_comment_multi_tenant": "🌍 Multi-tenant and regional scripts",
-    "start:server": "node server.js",
-    "start:africa": "cross-env REACT_APP_REGION=africa REACT_APP_ENVIRONMENT=dev npm run start",
-    "start:africa-prod": "cross-env REACT_APP_REGION=africa REACT_APP_ENVIRONMENT=prod npm run start:server",
-    "start:dev": "cross-env REACT_APP_REGION=africa REACT_APP_ENVIRONMENT=dev npm run start",
-    
-    "_comment_build": "🏗️ Regional build scripts",
-    "build:africa": "cross-env REACT_APP_REGION=africa REACT_APP_SUPPORTED_LANGUAGES=fr-CM,en-CM REACT_APP_DEFAULT_CURRENCY=XAF npm run build",
-    "build:europe": "cross-env REACT_APP_REGION=europe REACT_APP_SUPPORTED_LANGUAGES=en,fr,de,es npm run build",
-    "build:americas": "cross-env REACT_APP_REGION=americas REACT_APP_SUPPORTED_LANGUAGES=en,es,pt npm run build",
-    "build:asia": "cross-env REACT_APP_REGION=asia REACT_APP_SUPPORTED_LANGUAGES=en,zh,ja,ko npm run build",
-    "build:all-regions": "npm run build:africa && npm run build:europe && npm run build:americas && npm run build:asia",
-
-    "_comment_docker": "🐳 Docker commands for multi-tenant deployment",
-    "docker:build": "docker build -f Dockerfile.multi-tenant -t academyaxis-multi-tenant .",
-    "docker:build:africa": "docker build --build-arg REGION=africa --build-arg ENVIRONMENT=prod --build-arg GCP_REGION=europe-west1 -f Dockerfile.multi-tenant -t academyaxis-africa .",
-    "docker:run": "docker run -p 8080:8080 academyaxis-multi-tenant",
-    "docker:run:africa": "docker run -p 8080:8080 -e REACT_APP_REGION=africa academyaxis-africa",
-
-    "_comment_development": "🔧 Development and testing scripts",
-    "dev:setup": "npm install && npm run i18n:extract && npm run db:migrate",
-    "dev:cameron-school": "cross-env SCHOOL_ID=lycee_yaounde_001 REACT_APP_REGION=africa npm run start",
-    "dev:multi-school-parent": "cross-env PARENT_MODE=multi_school REACT_APP_REGION=africa npm run start",
-
-    "_comment_database": "🗄️ Database and migration scripts",
-    "db:migrate": "node scripts/migrate-to-multi-tenant.js",
-    "db:seed": "node scripts/seed-cameroon-schools.js",
-    "db:backup": "node scripts/backup-tenant-data.js",
-
-    "_comment_i18n": "🌐 Internationalization scripts",
-    "i18n:extract": "i18next-scanner --config i18next-scanner.config.js",
-    "i18n:validate": "node scripts/validate-translations.js",
-    "i18n:cameroon": "node scripts/setup-cameroon-languages.js",
-
-    "_comment_testing": "🧪 Testing scripts for multi-tenant features",
-    "test:unit": "react-scripts test --coverage",
-    "test:multi-tenant": "jest tests/multi-tenant/",
-    "test:cross-school": "jest tests/cross-school-parents/",
-    "test:cameroon": "jest tests/cameroon-features/",
-    "test:all": "npm run test:unit && npm run test:multi-tenant && npm run test:cross-school",
-
-    "_comment_deployment": "🚀 Deployment scripts",
-    "deploy:dev": "npm run build:africa && gcloud run deploy academyaxis-africa-dev --source .",
-    "deploy:prod": "npm run build:africa && gcloud run deploy academyaxis-africa-prod --source .",
-    "deploy:all-regions": "node scripts/deploy-all-regions.js",
-
-    "_comment_monitoring": "📊 Monitoring and health check scripts",
-    "health": "curl -f http://localhost:8080/health || exit 1",
-    "health:africa": "curl -f https://academyaxis-africa-prod-xxx.run.app/health || exit 1",
-    "logs:africa": "gcloud logs read 'resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"academyaxis-africa-prod\"' --limit=50",
-
-    "_comment_maintenance": "🔧 Maintenance and utility scripts",
-    "cleanup:docker": "docker system prune -f",
-    "analyze:bundle": "npm run build && npx bundle-analyzer build/static/js/*.js",
-    "security:audit": "npm audit && npm audit fix",
-    "update:deps": "npx npm-check-updates -u",
-
-    "_comment_school_management": "🏫 School management scripts",
-    "school:onboard": "node scripts/onboard-school.js",
-    "school:migrate": "node scripts/migrate-school-data.js",
-    "parent:link": "node scripts/link-parent-to-schools.js",
-
-    "_comment_regional": "🌍 Regional utility scripts",
-    "region:setup": "node scripts/setup-region.js",
-    "cameroon:setup": "node scripts/setup-cameroon-features.js",
-    "payment:setup:africa": "node scripts/setup-mobile-money.js"
+    "start:africa": "REACT_APP_REGION=africa react-scripts start",
+    "build:africa": "REACT_APP_REGION=africa REACT_APP_SUPPORTED_LANGUAGES=fr-CM,en-CM npm run build",
+    "start:server": "node server.js"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ],
-    "rules": {
-      "no-console": ["warn", { "allow": ["warn", "error"] }],
-      "no-unused-vars": "warn"
-    }
+    ]
   },
   "browserslist": {
     "production": [
       ">0.2%",
       "not dead",
-      "not op_mini all",
-      "not ie <= 11"
+      "not op_mini all"
     ],
     "development": [
       "last 1 chrome version",
@@ -158,68 +68,8 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/lodash": "^4.17.20",
-    "@types/uuid": "^10.0.0",
-    "@types/express": "^4.17.21",
-    "@types/cors": "^2.8.17",
-    "@types/morgan": "^1.9.9",
-    "@types/compression": "^1.7.5",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.5",
-    "cross-env": "^7.0.3",
-    "concurrently": "^8.2.2",
-    "nodemon": "^3.0.2",
-    "jest": "^27.5.1",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/user-event": "^13.5.0",
-    "i18next-scanner": "^4.4.0",
-    "bundle-analyzer": "^0.1.0",
-    "npm-check-updates": "^16.14.12"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
-  },
-  "optionalDependencies": {
-    "_comment": "🎯 Optional dependencies for enhanced features",
-    "sharp": "^0.32.6"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
-  },
-  "config": {
-    "regions": ["africa", "europe", "americas", "asia"],
-    "supportedLanguages": {
-      "africa": ["fr-CM", "en-CM"],
-      "europe": ["en", "fr", "de", "es"],
-      "americas": ["en", "es", "pt"],
-      "asia": ["en", "zh", "ja", "ko"]
-    },
-    "defaultCurrencies": {
-      "africa": "XAF",
-      "europe": "EUR", 
-      "americas": "USD",
-      "asia": "USD"
-    }
-  },
-  "multi-tenant": {
-    "features": {
-      "crossSchoolParents": true,
-      "schoolIsolation": true,
-      "regionalCompliance": true,
-      "bilingualSupport": true,
-      "mobilePayments": true
-    },
-    "cameroon": {
-      "languages": ["fr-CM", "en-CM"],
-      "currency": "XAF",
-      "timezone": "Africa/Douala",
-      "paymentProviders": ["orange_money", "mtn_momo", "express_union"],
-      "smsProvider": "africa_talking",
-      "educationSystem": "cameroon_bilingual",
-      "gradingScale": "20_point"
-    }
+    "@types/uuid": "^10.0.0"
   }
 }
