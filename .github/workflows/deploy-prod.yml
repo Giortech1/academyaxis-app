@@ -63,6 +63,7 @@ jobs:
           repository: Giortech1/org-infrastructure
           path: infrastructure
           token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
       - name: Install yq
         run: |
@@ -113,69 +114,70 @@ jobs:
           # Use existing project-config.yml (known to work)
           CONFIG_FILE="infrastructure/.github/config/project-config.yml"
           
-          if [ ! -f "$CONFIG_FILE" ]; then
-            echo "::error::Configuration file not found: $CONFIG_FILE"
-            echo "Creating default configuration..."
-            mkdir -p infrastructure/.github/config
-            cat > "$CONFIG_FILE" << 'EOF'
-          academyaxis:
-            dev:
-              project_id: "academyaxis-dev-project"
-              project_number: "1052274887859"
-              service_name: "academyaxis-dev"
-              region: "us-central1"
-              memory: "512Mi"
-              cpu: 1
-              min_instances: 0
-              max_instances: 10
-            uat:
-              project_id: "academyaxis-uat-project"
-              project_number: "415071431590"
-              service_name: "academyaxis-uat"
-              region: "us-central1"
-              memory: "512Mi"
-              cpu: 1
-              min_instances: 0
-              max_instances: 10
-            prod:
-              project_id: "academyaxis-prod-project"
-              project_number: "552816176477"
-              service_name: "academyaxis-prod"
-              region: "us-central1"
-              memory: "1Gi"
-              cpu: 2
-              min_instances: 1
-              max_instances: 20
-          
-          academyaxis237:
-            dev:
-              project_id: "academyaxis237-dev-project"
-              project_number: "123456789012"
-              service_name: "academyaxis237-dev"
-              region: "us-central1"
-              memory: "512Mi"
-              cpu: 1
-              min_instances: 0
-              max_instances: 10
-            uat:
-              project_id: "academyaxis237-uat-project"
-              project_number: "123456789013"
-              service_name: "academyaxis237-uat"
-              region: "us-central1"
-              memory: "512Mi"
-              cpu: 1
-              min_instances: 0
-              max_instances: 10
-            prod:
-              project_id: "academyaxis237-prod-project"
-              project_number: "123456789014"
-              service_name: "academyaxis237-prod"
-              region: "us-central1"
-              memory: "1Gi"
-              cpu: 2
-              min_instances: 1
-              max_instances: 20
-          EOF
+          # Check if the infrastructure directory exists and has the config file
+          if [ ! -d "infrastructure" ] || [ ! -f "$CONFIG_FILE" ]; then
+            echo "::warning::Infrastructure repository or configuration file not found, using default configuration"
+            CONFIG_FILE="/tmp/project-config.yml"
+            # Create default configuration
+            mkdir -p /tmp
+            echo "# Default configuration for AcademyAxis" > "$CONFIG_FILE"
+            echo "academyaxis:" >> "$CONFIG_FILE"
+            echo "  dev:" >> "$CONFIG_FILE"
+            echo "    project_id: \"academyaxis-dev-project\"" >> "$CONFIG_FILE"
+            echo "    project_number: \"1052274887859\"" >> "$CONFIG_FILE"
+            echo "    service_name: \"academyaxis-dev\"" >> "$CONFIG_FILE"
+            echo "    region: \"us-central1\"" >> "$CONFIG_FILE"
+            echo "    memory: \"512Mi\"" >> "$CONFIG_FILE"
+            echo "    cpu: 1" >> "$CONFIG_FILE"
+            echo "    min_instances: 0" >> "$CONFIG_FILE"
+            echo "    max_instances: 10" >> "$CONFIG_FILE"
+            echo "  uat:" >> "$CONFIG_FILE"
+            echo "    project_id: \"academyaxis-uat-project\"" >> "$CONFIG_FILE"
+            echo "    project_number: \"415071431590\"" >> "$CONFIG_FILE"
+            echo "    service_name: \"academyaxis-uat\"" >> "$CONFIG_FILE"
+            echo "    region: \"us-central1\"" >> "$CONFIG_FILE"
+            echo "    memory: \"512Mi\"" >> "$CONFIG_FILE"
+            echo "    cpu: 1" >> "$CONFIG_FILE"
+            echo "    min_instances: 0" >> "$CONFIG_FILE"
+            echo "    max_instances: 10" >> "$CONFIG_FILE"
+            echo "  prod:" >> "$CONFIG_FILE"
+            echo "    project_id: \"academyaxis-prod-project\"" >> "$CONFIG_FILE"
+            echo "    project_number: \"552816176477\"" >> "$CONFIG_FILE"
+            echo "    service_name: \"academyaxis-prod\"" >> "$CONFIG_FILE"
+            echo "    region: \"us-central1\"" >> "$CONFIG_FILE"
+            echo "    memory: \"1Gi\"" >> "$CONFIG_FILE"
+            echo "    cpu: 2" >> "$CONFIG_FILE"
+            echo "    min_instances: 1" >> "$CONFIG_FILE"
+            echo "    max_instances: 20" >> "$CONFIG_FILE"
+            echo "" >> "$CONFIG_FILE"
+            echo "academyaxis237:" >> "$CONFIG_FILE"
+            echo "  dev:" >> "$CONFIG_FILE"
+            echo "    project_id: \"academyaxis237-dev-project\"" >> "$CONFIG_FILE"
+            echo "    project_number: \"123456789012\"" >> "$CONFIG_FILE"
+            echo "    service_name: \"academyaxis237-dev\"" >> "$CONFIG_FILE"
+            echo "    region: \"us-central1\"" >> "$CONFIG_FILE"
+            echo "    memory: \"512Mi\"" >> "$CONFIG_FILE"
+            echo "    cpu: 1" >> "$CONFIG_FILE"
+            echo "    min_instances: 0" >> "$CONFIG_FILE"
+            echo "    max_instances: 10" >> "$CONFIG_FILE"
+            echo "  uat:" >> "$CONFIG_FILE"
+            echo "    project_id: \"academyaxis237-uat-project\"" >> "$CONFIG_FILE"
+            echo "    project_number: \"123456789013\"" >> "$CONFIG_FILE"
+            echo "    service_name: \"academyaxis237-uat\"" >> "$CONFIG_FILE"
+            echo "    region: \"us-central1\"" >> "$CONFIG_FILE"
+            echo "    memory: \"512Mi\"" >> "$CONFIG_FILE"
+            echo "    cpu: 1" >> "$CONFIG_FILE"
+            echo "    min_instances: 0" >> "$CONFIG_FILE"
+            echo "    max_instances: 10" >> "$CONFIG_FILE"
+            echo "  prod:" >> "$CONFIG_FILE"
+            echo "    project_id: \"academyaxis237-prod-project\"" >> "$CONFIG_FILE"
+            echo "    project_number: \"123456789014\"" >> "$CONFIG_FILE"
+            echo "    service_name: \"academyaxis237-prod\"" >> "$CONFIG_FILE"
+            echo "    region: \"us-central1\"" >> "$CONFIG_FILE"
+            echo "    memory: \"1Gi\"" >> "$CONFIG_FILE"
+            echo "    cpu: 2" >> "$CONFIG_FILE"
+            echo "    min_instances: 1" >> "$CONFIG_FILE"
+            echo "    max_instances: 20" >> "$CONFIG_FILE"
           fi
 
           echo "📋 Loading configuration for $APP_TYPE environment $ENV"
