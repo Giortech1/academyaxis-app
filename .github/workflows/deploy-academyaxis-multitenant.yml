@@ -210,6 +210,9 @@ jobs:
           git checkout ${{ github.sha }}
           
           echo "✅ Repository checked out successfully"
+          echo "📋 Repository: ${{ github.repository }}"
+          echo "📋 Commit SHA: ${{ github.sha }}"
+          echo "📋 Branch: ${{ github.ref_name }}"
           ls -la
       
       - name: Validate Dockerfile
