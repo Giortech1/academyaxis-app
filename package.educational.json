@@ -1,0 +1,25 @@
+{
+  "educational_scripts": {
+    "start:educational": "REACT_APP_EDUCATIONAL_MODE=true react-scripts start",
+    "start:educational-server": "node server/educational-platform.js",
+    "build:educational": "REACT_APP_EDUCATIONAL_MODE=true npm run build",
+    "build:cameroon": "REACT_APP_EDUCATIONAL_REGION=cameroon REACT_APP_GRADING_SYSTEM=20_point npm run build",
+    "build:africa": "REACT_APP_EDUCATIONAL_REGION=africa npm run build",
+    "dev:educational": "concurrently \"npm run start:educational\" \"npm run start:educational-server\"",
+    "test:educational": "REACT_APP_EDUCATIONAL_MODE=true npm test"
+  },
+  "educational_dependencies": {
+    "@google-cloud/firestore": "^7.11.3",
+    "@google-cloud/secret-manager": "^5.6.0",
+    "@google-cloud/storage": "^7.16.0",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "uuid": "^9.0.1"
+  },
+  "educational_devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
