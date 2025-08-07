@@ -39,16 +39,13 @@
     "styled-components": "^6.1.13",
     "uuid": "^9.0.1",
     "web-vitals": "^4.2.4"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "start:africa": "REACT_APP_REGION=africa react-scripts start",
-    "build:africa": "REACT_APP_REGION=africa REACT_APP_SUPPORTED_LANGUAGES=fr-CM,en-CM npm run build",
-    "start:server": "node server.js"
-  },
+},
+"scripts": {
+  "start:educational-server": "node server/educational-platform.js",
+  "start:educational": "REACT_APP_EDUCATIONAL_MODE=true react-scripts start",
+  "build:educational": "REACT_APP_EDUCATIONAL_MODE=true npm run build",
+  "build:cameroon": "REACT_APP_EDUCATIONAL_REGION=cameroon REACT_APP_GRADING_SYSTEM=20_point npm run build"
+},
   "eslintConfig": {
     "extends": [
       "react-app",

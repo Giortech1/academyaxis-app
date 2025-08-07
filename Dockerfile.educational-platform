@@ -1,0 +1,64 @@
+# Dockerfile.educational-platform
+# AcademyAxis Educational Platform - Bitrix24-inspired Multi-Tenant Architecture
+
+FROM node:18-alpine AS builder
+
+# Build arguments for educational multi-tenancy
+ARG EDUCATIONAL_REGION=global
+ARG ENVIRONMENT=prod
+ARG GCP_PROJECT
+ARG SUPPORTED_LANGUAGES=en-US
+ARG GRADING_SYSTEM=flexible
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production --no-audit --no-fund
+
+# Copy application files
+COPY . .
+
+# Set build-time environment variables
+ENV REACT_APP_EDUCATIONAL_REGION=${EDUCATIONAL_REGION}
+ENV REACT_APP_ENVIRONMENT=${ENVIRONMENT}
+ENV REACT_APP_EDUCATIONAL_MODE=true
+ENV REACT_APP_GRADING_SYSTEM=${GRADING_SYSTEM}
+
+# Build React app if src exists
+RUN if [ -d "src" ]; then npm run build; else mkdir -p build && echo '<!DOCTYPE html><html><body><h1>Educational Platform</h1></body></html>' > build/index.html; fi
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Install runtime dependencies
+RUN apk add --no-cache tini curl
+
+# Create user
+RUN addgroup -g 1001 -S academyaxis && adduser -S academyaxis -u 1001 -G academyaxis
+
+WORKDIR /app
+
+# Copy from builder
+COPY --from=builder --chown=academyaxis:academyaxis /app .
+
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV EDUCATIONAL_PLATFORM=true
+ENV MULTI_TENANT=true
+ENV SCHOOL_ISOLATION=true
+ENV CROSS_SCHOOL_PARENTS=true
+
+USER academyaxis
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "server/educational-platform.js"]
